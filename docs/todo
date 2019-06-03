@@ -1,1 +1,2 @@
-
+flukewm --move x y --resize w h 0x00012000 0x12000120
+flukem [[--action [args...]] [--action [args...]]...] [wid...]

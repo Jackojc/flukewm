@@ -2,7 +2,7 @@ CC=g++
 STD=c++17
 
 INCLUDE=-Isrc -I.
-LIBS=-pthread -lstdc++fs -lxcb -lxcb-util -lxcb-icccm
+LIBS=-pthread -lstdc++fs -lxcb -lxcb-util -lxcb-icccm -lxcb-randr
 
 BUILD_DIR=build
 TARGET=flukewm
