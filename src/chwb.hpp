@@ -1,15 +1,9 @@
 #pragma once
 
-extern "C" {
-	#include <xcb/xcb.h>
-	#include <xcb/xcb_aux.h>
-}
-
 #include <cstdlib>
-#include <cstdio>
 #include <string>
 
-#include "util.hpp"
+#include <utils/core.hpp>
 
 namespace fluke {
 	inline void chwb(xcb_connection_t* conn, uint16_t width, uint16_t color, xcb_window_t win) {

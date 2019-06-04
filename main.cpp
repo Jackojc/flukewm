@@ -1,27 +1,28 @@
 #include <iostream>
 #include <vector>
 
-
-#include <modules/chwb.hpp>
-
-
-static xcb_connection_t *conn;
-
-
+#include <utils/util.hpp>
+#include <structures/connection.hpp>
+#include <chwb.hpp>
+#include <chwn.hpp>
+#include <chwf.hpp>
+#include <ppd.hpp>
 
 
 
 int main(int argc, const char** argv) {
-	init_xcb(&conn);
+	fluke::Connection conn;
 
-	xcb_window_t win = std::strtoul("0x02c00006", nullptr, 16);
-
-
-	fluke::chwb(conn, 1, std::strtoul("ff00ff", nullptr, 16), win);
+	xcb_window_t win = std::strtoul("0x04200006", nullptr, 16);
 
 
-	xcb_aux_sync(conn);
-	kill_xcb(&conn);
+	// fluke::chwb(conn, 1, std::strtoul("ff00ff", nullptr, 16), win);
+	// fluke::chwn(conn, win, "firefucks");
+	fluke::chwf(conn, win);
+
+
+	// std::cout << fluke::ppd(conn) << '\n';
+
 
 	return 0;
 }
