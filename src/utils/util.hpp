@@ -4,6 +4,7 @@ extern "C" {
 	#include <xcb/xcb.h>
 	#include <xcb/xcb_aux.h>
 	#include <xcb/xproto.h>
+	#include <xcb/xcb_icccm.h>
 }
 
 #include <cstdlib>
@@ -12,6 +13,8 @@ extern "C" {
 #include <utils/exception.hpp>
 #include <utils/logger.hpp>
 
+#include <structures/point.hpp>
+
 namespace fluke {
 	void error(const std::string& msg) {
 		throw fluke::except::Generic(msg);
@@ -19,24 +22,59 @@ namespace fluke {
 
 
 
-	void init_xcb(xcb_connection_t **con) {
-		*con = xcb_connect(nullptr, nullptr);
+	template <typename T, typename... Ts>
+	inline bool fold_or(T arg, Ts&&... args) {
+		return ((arg != args) or ...);
+	}
 
-		if (xcb_connection_has_error(*con))
+
+
+	xcb_atom_t atom_get(xcb_connection_t *conn, const std::string& name) {
+		auto cookie = xcb_intern_atom(conn, 0, name.size(), name.c_str());
+		auto reply  = xcb_intern_atom_reply(conn, cookie, nullptr);
+
+		if (not reply)
+			return XCB_ATOM_STRING;
+
+		return reply->atom;
+	}
+
+
+
+	fluke::Point get_pointer_coords(xcb_connection_t* conn, xcb_screen_t* screen) {
+		auto mouse = xcb_query_pointer_reply(conn, xcb_query_pointer(conn, screen->root), nullptr);
+
+		if (not mouse)
+			fluke::error("could not get mouse location");
+
+		return { mouse->root_x, mouse->root_y };
+	}
+
+
+
+
+	void init_xcb(xcb_connection_t **conn) {
+		*conn = xcb_connect(nullptr, nullptr);
+
+		if (xcb_connection_has_error(*conn))
 			fluke::error("unable connect to the X server");
+
+		xcb_aux_sync(*conn);
 	}
 
 
 
-	void kill_xcb(xcb_connection_t **con) {
-		if (*con)
-			xcb_disconnect(*con);
+	void kill_xcb(xcb_connection_t **conn) {
+		xcb_aux_sync(*conn);
+
+		if (*conn)
+			xcb_disconnect(*conn);
 	}
 
 
 
-	xcb_screen_t* get_screen(xcb_connection_t *con) {
-		auto scr = xcb_setup_roots_iterator(xcb_get_setup(con)).data;
+	xcb_screen_t* get_screen(xcb_connection_t *conn) {
+		auto scr = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
 
 		if (scr == nullptr)
 			fluke::error("unable to retrieve screen informations");
@@ -46,79 +84,79 @@ namespace fluke {
 
 
 
-	int exists(xcb_connection_t *con, xcb_window_t w) {
+	int exists(xcb_connection_t *conn, xcb_window_t w) {
 		xcb_get_window_attributes_cookie_t c;
 		xcb_get_window_attributes_reply_t  *r;
 
-		c = xcb_get_window_attributes(con, w);
-		r = xcb_get_window_attributes_reply(con, c, nullptr);
+		c = xcb_get_window_attributes(conn, w);
+		r = xcb_get_window_attributes_reply(conn, c, nullptr);
 
 		if (r == nullptr)
 			return 0;
 
-		std::free(r);
 		return 1;
 	}
 
 
 
-	int mapped(xcb_connection_t *con, xcb_window_t w) {
+	int is_mapped(xcb_connection_t *conn, xcb_window_t w) {
 		int map_state;
 
 		xcb_get_window_attributes_cookie_t c;
 		xcb_get_window_attributes_reply_t  *r;
 
-		c = xcb_get_window_attributes(con, w);
-		r = xcb_get_window_attributes_reply(con, c, nullptr);
+		c = xcb_get_window_attributes(conn, w);
+		r = xcb_get_window_attributes_reply(conn, c, nullptr);
 
 		if (r == nullptr)
 			return 0;
 
 		map_state = r->map_state;
 
-		std::free(r);
 		return map_state == XCB_MAP_STATE_VIEWABLE;
 	}
 
 
 
-	int ignore(xcb_connection_t *con, xcb_window_t w) {
+	int is_ignored(xcb_connection_t *conn, xcb_window_t w) {
 		int override_redirect;
 
 		xcb_get_window_attributes_cookie_t c;
 		xcb_get_window_attributes_reply_t  *r;
 
-		c = xcb_get_window_attributes(con, w);
-		r = xcb_get_window_attributes_reply(con, c, nullptr);
+		c = xcb_get_window_attributes(conn, w);
+		r = xcb_get_window_attributes_reply(conn, c, nullptr);
 
 		if (r == nullptr)
 			return 0;
 
 		override_redirect = r->override_redirect;
 
-		std::free(r);
 		return override_redirect;
 	}
 
 
 
-	uint32_t get_windows(xcb_connection_t *con, xcb_window_t w, xcb_window_t **l) {
-		uint32_t childnum = 0;
-		xcb_query_tree_cookie_t c;
-		xcb_query_tree_reply_t *r;
+	auto get_windows(xcb_connection_t* conn, xcb_window_t wid) {
+		using vec_t = std::vector<xcb_window_t>;
 
-		c = xcb_query_tree(con, w);
-		r = xcb_query_tree_reply(con, c, nullptr);
-		if (r == nullptr)
-			fluke::error("0x%08x: no such window", w);
+		auto cookie = xcb_query_tree(conn, wid);
+		auto reply  = xcb_query_tree_reply(conn, cookie, nullptr);
 
-		*l = static_cast<xcb_window_t*>(std::malloc(sizeof(xcb_window_t) * r->children_len));
-		std::memcpy(*l, xcb_query_tree_children(r),
-				sizeof(xcb_window_t) * r->children_len);
+		if (not reply)
+			fluke::error("no such window: ", wid);
 
-		childnum = r->children_len;
 
-		std::free(r);
-		return childnum;
+		vec_t vec;
+
+		auto size = static_cast<vec_t::size_type>(reply->children_len);
+		vec.resize(size);
+
+
+		auto ptr = xcb_query_tree_children(reply);
+		std::copy(ptr, ptr + size, vec.begin());
+
+
+		return vec;
 	}
 }

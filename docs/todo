@@ -1,2 +1,8 @@
 flukewm --move x y --resize w h 0x00012000 0x12000120
 flukem [[--action [args...]] [--action [args...]]...] [wid...]
+
+
+- add phd and pfd functions for getting what display any window is on
+- inline functions
+- make functions accept fluke::Connection
+- bind functions to window and connection object

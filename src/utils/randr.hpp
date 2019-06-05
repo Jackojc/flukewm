@@ -1,16 +1,16 @@
 #pragma once
 
-#include <vector>
-
 extern "C" {
 	#include <xcb/randr.h>
 }
 
+#include <vector>
+#include <string>
 #include <utils/core.hpp>
 
 namespace fluke {
 	auto get_providers(xcb_connection_t* conn, xcb_screen_t* scrn) {
-		using vec_t = std::vector<xcb_randr_provider_t*>;
+		using vec_t = std::vector<xcb_randr_provider_t>;
 
 		auto pc = xcb_randr_get_providers(conn, scrn->root);
 		auto pr = xcb_randr_get_providers_reply(conn, pc, nullptr);
@@ -24,7 +24,11 @@ namespace fluke {
 		auto size = static_cast<vec_t::size_type>(xcb_randr_get_providers_providers_length(pr));
 		vec.resize(size);
 
-		*vec.data() = xcb_randr_get_providers_providers(pr);
+		auto ptr = xcb_randr_get_providers_providers(pr);
+		std::copy(ptr, ptr + size, vec.begin());
+
+
+		std::free(pr);
 
 		return vec;
 	}
@@ -32,7 +36,7 @@ namespace fluke {
 
 
 	auto get_outputs(xcb_connection_t* conn, xcb_randr_provider_t provider) {
-		using vec_t = std::vector<xcb_randr_output_t*>;
+		using vec_t = std::vector<xcb_randr_output_t>;
 
 		auto pic = xcb_randr_get_provider_info(conn, provider, 0);
 		auto pir = xcb_randr_get_provider_info_reply(conn, pic, nullptr);
@@ -46,7 +50,8 @@ namespace fluke {
 		auto size = static_cast<vec_t::size_type>(xcb_randr_get_provider_info_outputs_length(pir));
 		vec.resize(size);
 
-		*vec.data() = xcb_randr_get_provider_info_outputs(pir);
+		auto ptr = xcb_randr_get_provider_info_outputs(pir);
+		std::copy(ptr, ptr + size, vec.begin());
 
 		return vec;
 	}
@@ -71,9 +76,7 @@ namespace fluke {
 		auto name = xcb_randr_get_output_info_name(r);
 		auto size = xcb_randr_get_output_info_name_length(r);
 
-		std::string str(reinterpret_cast<char*>(name), static_cast<std::string::size_type>(size));
-
-		return str;
+		return {reinterpret_cast<char*>(name), static_cast<std::string::size_type>(size)};
 	}
 
 

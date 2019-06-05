@@ -5,23 +5,29 @@
 namespace fluke {
 	struct Connection {
 		xcb_connection_t* conn;
+		xcb_screen_t* screen;
 
 
 		Connection()
-			: conn(nullptr)
+			: conn(nullptr), screen(nullptr)
 		{
 			fluke::init_xcb(&conn);
+			screen = fluke::get_screen(conn);
 		}
 
 
 		~Connection() {
-			xcb_aux_sync(conn);
 			fluke::kill_xcb(&conn);
 		}
 
 
-		operator xcb_connection_t*() {
+		operator xcb_connection_t*() const {
 			return conn;
 		}
+
+		operator xcb_screen_t*() const {
+			return screen;
+		}
+
 	};
 }
