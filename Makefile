@@ -17,7 +17,7 @@ RELEASE_FLAGS=$(GENERAL_FLAGS) -Ofast -finline-limit=200 -fipa-pta -fwhole-progr
 DEBUG_FLAGS=$(GENERAL_FLAGS) -O2 -g
 
 
-LFLAGS=-flto -lm -lc -lgcc -lc
+LFLAGS=-flto
 
 
 # PROFILE_GENERAL_FLAGS=-fvpt
