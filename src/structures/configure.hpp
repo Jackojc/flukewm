@@ -150,7 +150,7 @@ namespace fluke {
 			values.clear();
 			values_attr.clear();
 
-			conn.sync();
+			// conn.sync();
 			return *this;
 		}
 

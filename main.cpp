@@ -24,6 +24,8 @@ int main(int argc, const char** argv) {
 
 		win.shrink(10);
 
+		conn.sync();
+
 	} catch (const std::exception& e) {
 		fluke::errorln_em("error: ", e.what());
 	}
