@@ -3,6 +3,14 @@ flukem [[--action [args...]] [--action [args...]]...] [wid...]
 
 
 - add phd and pfd functions for getting what display any window is on
-- inline functions
-- make functions accept fluke::Connection
-- bind functions to window and connection object
+
+
+- get/set mouse position
+- query displays
+- display object
+- get all displays, return list of display objects
+- get all windows, returns list of window objects
+- add interactive moving and resizing
+- get wew port working
+- statusbar using xsetroot -name, surely wew would output an event if root window name is changed, this might allow me ot update lemonbar or something when the root window name is changed, could also set it so that on certain keypresses, it refreshes the statusbar
+
