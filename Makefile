@@ -1,7 +1,7 @@
 CC=g++
 STD=c++17
 
-INCLUDE=-Isrc -I.
+INCLUDE=-Isrc -I. -Imodules/tinge/
 LIBS=-pthread -lstdc++fs -lxcb -lxcb-util -lxcb-icccm -lxcb-randr
 
 BUILD_DIR=build

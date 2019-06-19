@@ -7,8 +7,8 @@
 #include <string>
 #include <stdexcept>
 
+#include <tinge.hpp>
 #include <util/xcb.hpp>
-#include <util/logger.hpp>
 
 namespace fluke {
 	// hack
@@ -137,17 +137,9 @@ namespace fluke {
 
 			(GetGeometry, GetWindowAttributes) -> (get_geometry_reply_t, get_window_attributes_reply_t)
 		*/
-
-		// template <typename... Xs>
-		// auto get_impl(auto&& x) const {
-
-		// }
-
 		auto get() const {
 			return std::apply([] (auto&&... args) {
-				return std::tuple([] (auto&& x) {
-					return x.get();
-				}(args)...);
+				return std::tuple(args.get()...);
 			}, requests);
 		}
 	};
@@ -163,7 +155,7 @@ namespace fluke {
 int main(int argc, const char* argv[]) {
 
 	if (argc < 2) {
-		fluke::errorln_em("error: ", "no window specified!");
+		tinge::errorln_em("error: ", "no window specified!");
 		return 1;
 	}
 
@@ -190,7 +182,7 @@ int main(int argc, const char* argv[]) {
 
 
 	} catch (const std::exception& e) {
-		fluke::errorln_em("error: ", e.what());
+		tinge::errorln_em("error: ", e.what());
 		return 1;
 	}
 
