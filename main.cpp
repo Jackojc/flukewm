@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <stdexcept>
+#include <cstdlib>
 
 #include <tinge.hpp>
 #include <util/xcb.hpp>
@@ -23,31 +24,30 @@ namespace fluke {
 	struct GetterTag {};
 	struct SetterTag {};
 
-	#define NEW_REQUEST(name, type, msg, impl, tagtype)                                          \
-		NEW_EXCEPTION_TYPE(name##Error, msg)                                                     \
-		struct name {                                                                            \
-			using tag = tagtype;                                                                 \
-			fluke::Connection conn;                                                              \
-			xcb_##type##_cookie_t cookie;                                                        \
-			auto get() const {                                                                   \
-				if (auto ret = fluke::type##_reply_t{xcb_##type##_reply(conn, cookie, nullptr)}; \
-				    static_cast<bool>(ret) != impl)                                              \
-					return ret;                                                                  \
-				throw fluke::name##Error();                                                      \
-			}                                                                                    \
-			template <typename... Ts>                                                            \
-			name(const fluke::Connection& conn_, Ts&&... args):                                  \
-				conn(conn_),                                                                     \
-				cookie(fluke::new_##type##_request(conn_, std::forward<Ts>(args)...)) {}         \
-		};                                                                                       \
+	#define NEW_REQUEST(name, type, msg, impl, tagtype)                                      \
+		NEW_EXCEPTION_TYPE(name##Error, msg)                                                 \
+		struct name {                                                                        \
+			using tag = tagtype;                                                             \
+			fluke::Connection conn;                                                          \
+			xcb_##type##_cookie_t cookie;                                                    \
+			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args):    \
+				conn(conn_),                                                                 \
+				cookie(fluke::new_##type##_request(conn_, std::forward<Ts>(args)...)) {}     \
+			auto get() const {                                                               \
+				auto ret = fluke::type##_reply_t{xcb_##type##_reply(conn, cookie, nullptr), std::free}; \
+				if (static_cast<bool>(ret) != impl)                                          \
+					return ret;                                                              \
+				throw fluke::name##Error();                                                  \
+			}                                                                                \
+		};
 
 	#define GET_REQUEST(name, type, msg)                              \
 		constexpr auto new_##type##_request = xcb_##type;             \
-		using type##_reply_t = std::unique_ptr<xcb_##type##_reply_t>; \
+		using type##_reply_t = std::unique_ptr<xcb_##type##_reply_t, decltype(&std::free)>; \
 		NEW_REQUEST(name, type, msg, false, GetterTag)                \
 
 	#define SET_REQUEST(name, type, msg)                                                                        \
-		using type##_reply_t = std::unique_ptr<xcb_generic_error_t>;                                            \
+		using type##_reply_t = std::unique_ptr<xcb_generic_error_t, decltype(&std::free)>;                       \
 		using xcb_##type##_cookie_t = xcb_void_cookie_t;                                                        \
 		constexpr auto new_##type##_request = xcb_##type##_checked;                                             \
 		template <typename C, typename P> auto xcb_##type##_reply(const fluke::Connection& conn, C cookie, P) { \
@@ -66,7 +66,7 @@ namespace fluke {
 		std::shared_ptr<xcb_connection_t> conn;
 
 		Connection()
-			: conn(xcb_connect(nullptr, nullptr), [] (auto c) { std::free(c); })
+			: conn(xcb_connect(nullptr, nullptr), [] (auto c) { xcb_disconnect(c); })
 		{
 			if (xcb_connection_has_error(conn.get()))
 				throw fluke::ConnectionError();
@@ -124,12 +124,24 @@ namespace fluke {
 
 	template <typename... Ts>
 	class RequestBuffer {
-		using container_t  = std::tuple<Ts...>;
-		container_t requests;
+		std::tuple<Ts...> requests;
 
 	public:
 		RequestBuffer(Ts&&... args)
 			: requests(std::forward<Ts>(args)...) {}
+
+
+		template <typename Tag, typename T>
+		constexpr static auto get_as_tuple(T&& arg) {
+			// If it's a getter, return tuple.
+			if constexpr(std::is_same_v<Tag, GetterTag>)
+				return std::tuple{ std::forward<T>(arg) };
+
+			// If it's a setter, return empty tuple.
+			else
+				return std::tuple{};
+		}
+
 
 		/*
 			Call `.get()` on all of the tuple elements in this->requests and return
@@ -137,14 +149,16 @@ namespace fluke {
 
 			(GetGeometry, GetWindowAttributes) -> (get_geometry_reply_t, get_window_attributes_reply_t)
 		*/
-		auto get() const {
-			return std::apply([] (auto&&... args) {
-				return std::tuple(args.get()...);
+		constexpr auto get() const {
+			return std::apply([] (Ts... args) {
+				return std::tuple_cat(
+					get_as_tuple<typename Ts::tag>(args.get())...
+				);
 			}, requests);
 		}
 	};
-}
 
+}
 
 
 
@@ -167,14 +181,12 @@ int main(int argc, const char* argv[]) {
 	try {
 		std::vector<uint32_t> new_position = {0, 0};
 
-		auto requests = fluke::RequestBuffer{
+		auto&& [geom, attr] = fluke::RequestBuffer{
 			fluke::GetGeometry{conn, win},
 			fluke::GetWindowAttributes{conn, win},
 			fluke::ConfigureWindow{conn, win, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, new_position.data()}
 		}.get();
 
-
-		auto&& [geom, attr, _] = requests;
 
 
 		std::cerr << geom->x << ", " << geom->y << ", " << geom->width << ", " << geom->height << '\n';

@@ -2,8 +2,7 @@ CC=g++
 STD=c++17
 
 INCLUDE=-Isrc -I. -Imodules/tinge/
-LIBS=-pthread -lstdc++fs -lxcb -lxcb-util -lxcb-icccm -lxcb-randr
-
+LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -static-libstdc++ -static-libgcc -lstdc++fs
 BUILD_DIR=build
 TARGET=flukewm
 

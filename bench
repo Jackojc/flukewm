@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
-hyperfine --min-runs 5 --warmup 2 "./flukewm > /dev/null"
+hyperfine --min-runs 5 --warmup 2 "./flukewm $(pfw)> /dev/null"
 
