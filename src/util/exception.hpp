@@ -13,6 +13,7 @@
 
 namespace fluke {
 	NEW_EXCEPTION_TYPE(ConnectionError, "could not initialise X server connection!")
+	NEW_EXCEPTION_TYPE(UnknownTagError, "unknown tag type!")
 
 	NEW_EXCEPTION_TYPE(InternAtomError,             "could not get window atom!")
 	NEW_EXCEPTION_TYPE(GetWindowAttributesError,    "could not get window attributes!")
@@ -29,7 +30,6 @@ namespace fluke {
 	NEW_EXCEPTION_TYPE(ConfigureWindowError,        "could not configure window!")
 	NEW_EXCEPTION_TYPE(ChangeWindowAttributesError, "could not change window attributes!")
 
-	NEW_EXCEPTION_TYPE(UnknownTagError, "unknown tag type!")
 }
 
 #undef NEW_EXCEPTION_TYPE

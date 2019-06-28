@@ -39,9 +39,19 @@ namespace fluke {
 			(GetGeometry, GetWindowAttributes) -> (get_geometry_reply_t, get_window_attributes_reply_t)
 		*/
 		constexpr auto get() const {
-			return std::apply([] (Ts... args) {
+			auto&& ret = std::apply([] (Ts... args) {
 				return std::tuple_cat(get_as_tuple<typename Ts::tag_t>(args.get())...);
 			}, requests);
+
+			constexpr auto size = std::tuple_size_v<std::decay_t<decltype(ret)>>;
+
+			if constexpr(size > 1) {
+				return ret;
+
+			} else if constexpr(size == 1) {
+				return std::get<0>(ret);
+
+			}
 		}
 	};
 

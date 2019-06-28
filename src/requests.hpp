@@ -22,7 +22,7 @@ namespace fluke {
 			: conn(conn_), cookie(cookie_) {}
 
 		template <typename F>
-		auto get(F func) {
+		auto get(F func) const {
 			if constexpr(std::is_same_v<tag_t, detail::GetterTag>) {
 				if (auto ret = reply_t{func(conn, cookie, nullptr), std::free}; ret)
 					return ret;
@@ -45,7 +45,7 @@ namespace fluke {
 		struct name: Request<detail::GetterTag, xcb_##type##_cookie_t, xcb_##type##_reply_t, fluke::name##Error> { \
 			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
 				Request::Request(conn_, xcb_##type(conn_, std::forward<Ts>(args)...)) {} \
-			auto get() { return Request::get(xcb_##type##_reply); } \
+			auto get() const { return Request::get(xcb_##type##_reply); } \
 		};
 
 
@@ -53,8 +53,8 @@ namespace fluke {
 	#define SET_REQUEST(name, type) \
 		struct name: Request<detail::SetterTag, xcb_void_cookie_t, xcb_generic_error_t, fluke::name##Error> { \
 			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
-				Request::Request(conn_, xcb_##type(conn_, std::forward<Ts>(args)...)) {} \
-			auto get() { return Request::get(xcb_request_check); } \
+				Request::Request(conn_, xcb_##type##_checked(conn_, std::forward<Ts>(args)...)) {} \
+			auto get() const { return Request::get(xcb_request_check); } \
 		};
 
 

@@ -15,10 +15,52 @@ int main(int argc, const char* argv[]) {
 
 	/*
 		todo:
-			- If requestbuffer only has a single return value, unpack the tuple internally
-			  so you can just do `auto x = ...` instead of `auto&& [x] = ...`.
 			- Make the specialised requests inherit from ConfigureWindow etc to cut down
 			  on code duplication.
+
+			// implement these:
+
+			GetWindowName
+			SetWindowName
+
+			GetPointerPos
+			SetPointerPos
+
+			GetDisplayPos           = Get display coords
+			GetDisplaySize          = Get display resolution
+			GetDisplayRect          = Get display coords and resolution
+
+			SetWindowFocus          = Change window focus
+			GetWindowFocus          = Get focused window
+
+			SetWindowVisibility     = map/unmap a window
+			GetWindowVisibility     = check mapped status
+
+			SetWindowTracked        = ignore/notice a window
+			GetWindowTracked        = checked ignored status
+
+			KillWindow              = force close a window
+			CloseWindow             = close a window gracefully
+
+			SetWindowStackingOrder
+			GetWindowStackingOrder
+
+			SetWindowBorderColour
+			SetWindowBorderSize
+			GetWindowBorderColour
+			GetWindowBorderSize
+
+			ListWindows
+			ListDisplays
+
+			GetDisplayFocus
+			SetDisplayFocus
+
+			GetPrimaryDisplay
+			SetPrimaryDisplay
+
+			GetHoveredWindow        = get window with mouse on top
+			GetHoveredDisplay       = get display mouse is on
 	*/
 
 
@@ -27,8 +69,8 @@ int main(int argc, const char* argv[]) {
 
 
 	try {
-		auto&& [rect] = fluke::RequestBuffer{
-			fluke::SetWindowRect(conn, win, {0, 0, 1366, 768}),
+		auto rect = fluke::RequestBuffer{
+			fluke::SetWindowRect(conn, win, {0, 0, 1364, 766}),
 			fluke::GetWindowRect(conn, win)
 		}.get();
 
