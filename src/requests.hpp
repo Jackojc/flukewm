@@ -59,7 +59,7 @@ namespace fluke {
 
 
 	// Getters
-	GET_REQUEST(InternAtom,            intern_atom)
+	GET_REQUEST(GetInternAtom,         intern_atom)
 	GET_REQUEST(GetWindowAttributes,   get_window_attributes)
 	GET_REQUEST(GetGeometry,           get_geometry)
 	GET_REQUEST(GetProperty,           get_property)

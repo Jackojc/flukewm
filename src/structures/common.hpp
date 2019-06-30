@@ -11,53 +11,52 @@ namespace fluke {
 
 
 
-	struct WindowPosition {
-		using pos_type = decltype(xcb_get_geometry_reply_t::x);
-		std::array<uint32_t, 2> pos;
 
-		WindowPosition(pos_type x, pos_type y) {
-			pos.at(0) = static_cast<uint32_t>(x);
-			pos.at(1) = static_cast<uint32_t>(y);
-		}
+	struct Position {
+		decltype(xcb_get_geometry_reply_t::x) x, y;
+	};
 
-		operator uint32_t* () const {
-			return pos.data();
-		}
+	struct Size {
+		decltype(xcb_get_geometry_reply_t::width) w, h;
+	};
+
+	struct Rect {
+		decltype(xcb_get_geometry_reply_t::x) x, y;
+		decltype(xcb_get_geometry_reply_t::width) w, h;
 	};
 
 
-	struct WindowSize {
-		using size_type = decltype(xcb_get_geometry_reply_t::width);
-		std::array<uint32_t, 2> size;
 
-		WindowSize(size_type w, size_type h) {
-			size.at(0) = static_cast<uint32_t>(w);
-			size.at(1) = static_cast<uint32_t>(h);
-		}
+	std::array<uint32_t, 2> to_uint32_array(const Position& pos) {
+		auto [x, y] = pos;
 
-		operator uint32_t* () const {
-			return size.data();
-		}
-	};
+		return {
+			static_cast<uint32_t>(x),
+			static_cast<uint32_t>(y)
+		};
+	}
 
 
-	struct WindowRect {
-		using size_type = decltype(xcb_get_geometry_reply_t::width);
-		using pos_type  = decltype(xcb_get_geometry_reply_t::x);
-		std::array<uint32_t, 4> rect;
+	std::array<uint32_t, 2> to_uint32_array(const Size& size) {
+		auto [w, h] = size;
 
-		WindowRect(pos_type x, pos_type y, size_type w, size_type h) {
-			rect.at(0) = static_cast<uint32_t>(x);
-			rect.at(1) = static_cast<uint32_t>(y);
-			rect.at(2) = static_cast<uint32_t>(w);
-			rect.at(3) = static_cast<uint32_t>(h);
-		}
+		return {
+			static_cast<uint32_t>(w),
+			static_cast<uint32_t>(h)
+		};
+	}
 
-		operator uint32_t* () const {
-			return rect.data();
-		}
-	};
 
+	std::array<uint32_t, 4> to_uint32_array(const Rect& rect) {
+		auto [x, y, w, h] = rect;
+
+		return {
+			static_cast<uint32_t>(x),
+			static_cast<uint32_t>(y),
+			static_cast<uint32_t>(w),
+			static_cast<uint32_t>(h)
+		};
+	}
 
 
 }
