@@ -8,16 +8,29 @@ namespace fluke {
 
 	struct Connection {
 		std::shared_ptr<xcb_connection_t> conn;
+		xcb_screen_t* screen;
 
 		Connection()
-			: conn(xcb_connect(nullptr, nullptr), [] (auto c) { xcb_disconnect(c); })
+			: conn(xcb_connect(nullptr, nullptr), [] (auto c) { xcb_disconnect(c); }),
+			  screen(xcb_setup_roots_iterator(xcb_get_setup(conn.get())).data)
 		{
 			if (xcb_connection_has_error(conn.get()))
 				throw fluke::ConnectionError();
+
+			if (not screen)
+				throw fluke::ScreenError();
 		}
 
 		operator xcb_connection_t* () const {
 			return conn.get();
+		}
+
+		operator xcb_screen_t* () const {
+			return screen;
+		}
+
+		constexpr xcb_window_t root() const {
+			return screen->root;
 		}
 
 		// Flush all pending requests.

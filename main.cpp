@@ -6,10 +6,10 @@
 #include <fluke.hpp>
 
 int main(int argc, const char* argv[]) {
-	if (argc < 2) {
-		tinge::errorln_em("error: ", "no window specified!");
-		return 1;
-	}
+	// if (argc < 2) {
+	// 	tinge::errorln_em("error: ", "no window specified!");
+	// 	return 1;
+	// }
 
 
 
@@ -18,12 +18,13 @@ int main(int argc, const char* argv[]) {
 			- Make the specialised requests inherit from ConfigureWindow etc to cut down
 			  on code duplication.
 
+
 			// implement these:
 
 			GetWindowName
 			SetWindowName
 
-			GetPointerPos
+			[x] GetPointerPos
 			SetPointerPos
 
 			GetDisplayPos           = Get display coords
@@ -65,22 +66,25 @@ int main(int argc, const char* argv[]) {
 
 
 	fluke::Connection conn;
-	xcb_window_t win = std::strtoul(argv[1], nullptr, 16);
+	// xcb_window_t win = std::strtoul(argv[1], nullptr, 16);
 
 
 	try {
-		auto rect = fluke::RequestBuffer{
-			fluke::SetWindowRect(conn, win, {0, 0, 1364, 766}),
-			fluke::GetWindowRect(conn, win)
+		auto pos = fluke::RequestBuffer{
+			fluke::GetPointerPos(conn)
+			// fluke::SetWindowRect(conn, win, {0, 0, 1364, 766}),
+			// fluke::GetWindowRect(conn, win)
 		}.get();
 
 
-		std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
+		std::cerr << pos.x << ", " << pos.y << '\n';
 
-		conn.sync();
+		// std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
 
-		rect = fluke::GetWindowRect(conn, win).get();
-		std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
+		// conn.sync();
+
+		// rect = fluke::GetWindowRect(conn, win).get();
+		// std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
 
 
 	} catch (const std::exception& e) {

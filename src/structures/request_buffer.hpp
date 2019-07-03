@@ -49,8 +49,7 @@ namespace fluke {
 				return ret;
 
 			} else if constexpr(size == 1) {
-				return std::get<0>(ret);
-
+				return std::move(std::get<0>(ret));
 			}
 		}
 	};

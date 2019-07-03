@@ -27,7 +27,7 @@ namespace fluke {
 
 
 
-	std::array<uint32_t, 2> to_uint32_array(const Position& pos) {
+	constexpr std::array<uint32_t, 2> to_uint32_array(const Position& pos) {
 		auto [x, y] = pos;
 
 		return {
@@ -37,7 +37,7 @@ namespace fluke {
 	}
 
 
-	std::array<uint32_t, 2> to_uint32_array(const Size& size) {
+	constexpr std::array<uint32_t, 2> to_uint32_array(const Size& size) {
 		auto [w, h] = size;
 
 		return {
@@ -47,7 +47,7 @@ namespace fluke {
 	}
 
 
-	std::array<uint32_t, 4> to_uint32_array(const Rect& rect) {
+	constexpr std::array<uint32_t, 4> to_uint32_array(const Rect& rect) {
 		auto [x, y, w, h] = rect;
 
 		return {

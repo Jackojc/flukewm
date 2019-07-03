@@ -61,21 +61,21 @@ namespace fluke {
 	// Getters
 	GET_REQUEST(GetInternAtom,         intern_atom)
 	GET_REQUEST(GetWindowAttributes,   get_window_attributes)
-	GET_REQUEST(GetGeometry,           get_geometry)
-	GET_REQUEST(GetProperty,           get_property)
+	GET_REQUEST(GetWindowGeometry,     get_geometry)
+	GET_REQUEST(GetWindowProperty,     get_property)
 	GET_REQUEST(GetInputFocus,         get_input_focus)
-	GET_REQUEST(QueryTree,             query_tree)
-	GET_REQUEST(QueryPointer,          query_pointer)
-	GET_REQUEST(RandrGetProviders,     randr_get_providers)
-	GET_REQUEST(RandrGetProviderInfo,  randr_get_provider_info)
-	GET_REQUEST(RandrGetOutputInfo,    randr_get_output_info)
-	GET_REQUEST(RandrGetCrtcInfo,      randr_get_crtc_info)
-	GET_REQUEST(RandrGetOutputPrimary, randr_get_output_primary)
+	GET_REQUEST(GetTree,               query_tree)
+	GET_REQUEST(GetPointer,            query_pointer)
+	GET_REQUEST(GetRandrProviders,     randr_get_providers)
+	GET_REQUEST(GetRandrProviderInfo,  randr_get_provider_info)
+	GET_REQUEST(GetRandrOutputInfo,    randr_get_output_info)
+	GET_REQUEST(GetRandrCrtcInfo,      randr_get_crtc_info)
+	GET_REQUEST(GetRandrOutputPrimary, randr_get_output_primary)
 
 
 	// // Setters
-	SET_REQUEST(ConfigureWindow,        configure_window)
-	SET_REQUEST(ChangeWindowAttributes, change_window_attributes)
+	SET_REQUEST(SetWindowConfig,     configure_window)
+	SET_REQUEST(SetWindowAttributes, change_window_attributes)
 
 
 	#undef GET_REQUEST
