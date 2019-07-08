@@ -1,6 +1,7 @@
 # Fluke Window Manager
 A simple, fast and efficient window manager for X.
 
+[![build](https://img.shields.io/travis/Jackojc/flukewm.svg?style=flat)](https://travis-ci.org/Jackojc/flukewm)
 ![c++](https://img.shields.io/badge/c%2B%2B-%3E%3D17-blue.svg?style=flat)
 ![code size](https://img.shields.io/github/languages/code-size/Jackojc/flukewm.svg)
 [![license](https://img.shields.io/github/license/Jackojc/flukewm.svg?style=flat)](./LICENSE)
