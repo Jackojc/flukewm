@@ -22,7 +22,7 @@ namespace fluke {
 			: conn(conn_), cookie(cookie_) {}
 
 		template <typename F>
-		auto get(F func) {
+		auto get(F func) const {
 			if constexpr(std::is_same_v<tag_t, detail::GetterTag>) {
 				if (auto ret = reply_t{func(conn, cookie, nullptr), std::free}; ret)
 					return ret;
@@ -45,7 +45,7 @@ namespace fluke {
 		struct name: Request<detail::GetterTag, xcb_##type##_cookie_t, xcb_##type##_reply_t, fluke::name##Error> { \
 			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
 				Request::Request(conn_, xcb_##type(conn_, std::forward<Ts>(args)...)) {} \
-			auto get() { return Request::get(xcb_##type##_reply); } \
+			auto get() const { return Request::get(xcb_##type##_reply); } \
 		};
 
 
@@ -53,29 +53,29 @@ namespace fluke {
 	#define SET_REQUEST(name, type) \
 		struct name: Request<detail::SetterTag, xcb_void_cookie_t, xcb_generic_error_t, fluke::name##Error> { \
 			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
-				Request::Request(conn_, xcb_##type(conn_, std::forward<Ts>(args)...)) {} \
-			auto get() { return Request::get(xcb_request_check); } \
+				Request::Request(conn_, xcb_##type##_checked(conn_, std::forward<Ts>(args)...)) {} \
+			auto get() const { return Request::get(xcb_request_check); } \
 		};
 
 
 	// Getters
-	GET_REQUEST(InternAtom,            intern_atom)
+	GET_REQUEST(GetInternAtom,         intern_atom)
 	GET_REQUEST(GetWindowAttributes,   get_window_attributes)
-	GET_REQUEST(GetGeometry,           get_geometry)
-	GET_REQUEST(GetProperty,           get_property)
+	GET_REQUEST(GetWindowGeometry,     get_geometry)
+	GET_REQUEST(GetWindowProperty,     get_property)
 	GET_REQUEST(GetInputFocus,         get_input_focus)
-	GET_REQUEST(QueryTree,             query_tree)
-	GET_REQUEST(QueryPointer,          query_pointer)
-	GET_REQUEST(RandrGetProviders,     randr_get_providers)
-	GET_REQUEST(RandrGetProviderInfo,  randr_get_provider_info)
-	GET_REQUEST(RandrGetOutputInfo,    randr_get_output_info)
-	GET_REQUEST(RandrGetCrtcInfo,      randr_get_crtc_info)
-	GET_REQUEST(RandrGetOutputPrimary, randr_get_output_primary)
+	GET_REQUEST(GetTree,               query_tree)
+	GET_REQUEST(GetPointer,            query_pointer)
+	GET_REQUEST(GetRandrProviders,     randr_get_providers)
+	GET_REQUEST(GetRandrProviderInfo,  randr_get_provider_info)
+	GET_REQUEST(GetRandrOutputInfo,    randr_get_output_info)
+	GET_REQUEST(GetRandrCrtcInfo,      randr_get_crtc_info)
+	GET_REQUEST(GetRandrOutputPrimary, randr_get_output_primary)
 
 
 	// // Setters
-	SET_REQUEST(ConfigureWindow,        configure_window)
-	SET_REQUEST(ChangeWindowAttributes, change_window_attributes)
+	SET_REQUEST(SetWindowConfig,     configure_window)
+	SET_REQUEST(SetWindowAttributes, change_window_attributes)
 
 
 	#undef GET_REQUEST
