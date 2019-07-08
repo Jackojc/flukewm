@@ -10,6 +10,8 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - libstdc++-8-dev
+    - libxcb-dev
+    - libxcb
 
 before_install:
   # C++17
