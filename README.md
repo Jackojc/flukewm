@@ -1,4 +1,12 @@
-# Fluke Window Manager
+```
+  __ _       _
+ / _| |_   _| | _______      ___ __ ___
+| |_| | | | | |/ / _ \ \ /\ / | '_ ` _ \
+|  _| | |_| |   |  __/\ V  V /| | | | | |
+|_| |_|\__,_|_|\_\___| \_/\_/ |_| |_| |_|
+```
+
+# fluke window manager
 A simple, fast and efficient window manager for X.
 
 [![build](https://img.shields.io/travis/Jackojc/flukewm.svg?style=flat)](https://travis-ci.org/Jackojc/flukewm)
@@ -66,3 +74,4 @@ This project was inspired by:
 
 ### progress & discussion
 You can join the discord server in order to follow progress and/or contribute to discussion of the project. (https://discord.gg/RmgjcES)
+

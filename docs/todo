@@ -2,7 +2,6 @@ flukewm --move x y --resize w h 0x00012000 0x12000120
 flukem [[--action [args...]] [--action [args...]]...] [wid...]
 
 
-- add phd and pfd functions for getting what display any window is on
 
 
 - get/set mouse position
@@ -14,3 +13,5 @@ flukem [[--action [args...]] [--action [args...]]...] [wid...]
 - get wew port working
 - statusbar using xsetroot -name, surely wew would output an event if root window name is changed, this might allow me ot update lemonbar or something when the root window name is changed, could also set it so that on certain keypresses, it refreshes the statusbar
 
+- add video of workflow to readme
+- add -fwhole-program-vtables and -fforce-emit-vtables to clang cxxflags
