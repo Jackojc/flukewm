@@ -1,63 +1,52 @@
-CXX?=g++
-STD=c++17
+# flukewm
 
-INCLUDE=-Isrc -I. -Imodules/tinge/
-LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -static-libstdc++ -static-libgcc -lstdc++fs
+.POSIX:
 
-BUILD_DIR=build
-TARGET=flukewm
+include config.mk
 
-WFLAGS=$(CXXWARN) -Wall -Wextra -Wcast-align -Wcast-qual -Wnon-virtual-dtor -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wstrict-overflow=4 -Wundef -Wno-unused
+SRC=main.cpp
 
+all: options flukewm
 
-GENERAL_FLAGS=$(CXXFLAGS) -msse2 -march=native -m64
-RELEASE_FLAGS=$(GENERAL_FLAGS) -Ofast -finline-limit=200 -fipa-pta -fwhole-program -fsplit-loops -funswitch-loops
-DEBUG_FLAGS=$(GENERAL_FLAGS) -O2 -g
+config:
+	mkdir -p build/
 
+options:
+	@echo " \033[32;1m=>\033[39m Debug    = $(debug)\033[0m"
+	@echo " \033[32;1m=>\033[39m PGO      = $(pgo)\033[0m"
+	@echo " \033[32;1m=>\033[39m Symbols  = $(symbols)\033[0m"
 
-LFLAGS=-flto
+	@echo "\n \033[32m=>\033[39m CXX      = \033[0m$(CXX)"
+	@echo " \033[32m=>\033[39m CXXWARN  = \033[0m$(FLUKE_CXXWARN)"
+	@echo " \033[32m=>\033[39m CXXFLAGS = \033[0m$(FLUKE_CXXFLAGS)"
+	@echo " \033[32m=>\033[39m LDFLAGS  = \033[0m$(FLUKE_LDFLAGS)"
 
+flukewm: config
+	$(CXX) -std=c++17 $(FLUKE_CXXWARN) $(FLUKE_CXXFLAGS) -o build/$@ $(SRC) $(FLUKE_LDFLAGS)
+	@echo "$(logging)"
 
-# PROFILE_GENERAL_FLAGS=-fvpt
-PROFILE_GEN_FLAGS=$(PROFILE_GENERAL_FLAGS) -fprofile-generate
-PROFILE_USE_FLAGS=$(PROFILE_GENERAL_FLAGS) -fprofile-use
+clean:
+	rm -rf build/ flukewm.tar.gz *.gcda
 
+dist: clean
+	mkdir -p flukewm-tmp/
+	cp -Rf LICENSE README.md Makefile main.cpp src/ modules/ docs/ flukewm-tmp/
+	tar -cf - flukewm-tmp/ | gzip > flukewm.tar.gz
+	rm -rf flukewm-tmp/
 
-COMMAND=$(CXX) --std=$(STD) $(WFLAGS) $(INCLUDE)
+	@echo "\n \033[32;1m=>\033[39m Created flukewm.tar.gz\033[0m\n"
 
+install: flukewm
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp -f ./build/flukewm $(DESTDIR)$(PREFIX)/bin
+	chmod 755 $(DESTDIR)$(PREFIX)/bin/flukewm
 
-all:
-	mkdir -p $(BUILD_DIR)
-	$(COMMAND) $(DEBUG_FLAGS) -c main.cpp -o $(BUILD_DIR)/main.o
-	$(COMMAND) $(DEBUG_FLAGS) build/*.o $(LIBS) -o $(BUILD_DIR)/$(TARGET)
+	@echo "\n \033[32;1m=>\033[39m Installed flukewm to $(DESTDIR)$(PREFIX)/bin/flukewm\033[0m\n"
 
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/flukewm
 
-unop:
-	mkdir -p $(BUILD_DIR)
-	$(COMMAND) -c main.cpp -o $(BUILD_DIR)/main.o
-	$(COMMAND) $(LFLAGS) build/*.o $(LIBS) -o $(BUILD_DIR)/$(TARGET)
+	@echo "\n \033[32;1m=>\033[39m Removed flukewm\033[0m\n"
 
-
-rel:
-	mkdir -p $(BUILD_DIR)
-	$(COMMAND) $(RELEASE_FLAGS) $(PROFILE_GEN_FLAGS) -c main.cpp -o $(BUILD_DIR)/main.o
-	$(COMMAND) $(RELEASE_FLAGS) $(PROFILE_GEN_FLAGS) $(LFLAGS) build/*.o $(LIBS) -o $(BUILD_DIR)/$(TARGET)
-
-	./bench
-
-	$(COMMAND) $(RELEASE_FLAGS) $(PROFILE_USE_FLAGS) -c main.cpp -o $(BUILD_DIR)/main.o
-	$(COMMAND) $(RELEASE_FLAGS) $(PROFILE_USE_FLAGS) $(LFLAGS) build/*.o $(LIBS) -o $(BUILD_DIR)/$(TARGET)
-
-
-# With symbols
-relsym:
-	mkdir -p $(BUILD_DIR)
-	$(COMMAND) $(RELEASE_FLAGS) -g $(PROFILE_GEN_FLAGS) -c main.cpp -o $(BUILD_DIR)/main.o
-	$(COMMAND) $(RELEASE_FLAGS) -g $(PROFILE_GEN_FLAGS) $(LFLAGS) build/*.o $(LIBS) -o $(BUILD_DIR)/$(TARGET)
-
-	./bench
-
-	$(COMMAND) $(RELEASE_FLAGS) -g $(PROFILE_USE_FLAGS) -c main.cpp -o $(BUILD_DIR)/main.o
-	$(COMMAND) $(RELEASE_FLAGS) -g $(PROFILE_USE_FLAGS) $(LFLAGS) build/*.o $(LIBS) -o $(BUILD_DIR)/$(TARGET)
-
+.PHONY: all options clean dist install uninstall
 
