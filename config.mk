@@ -1,5 +1,3 @@
-debug   ?= no
-
 # options
 PREFIX = /usr/local
 MANPREFIX = $(PREFIX)/share/man
@@ -29,6 +27,8 @@ logging =
 
 # optimisation flags
 FLUKE_CXXFLAGS = $(INCS) $(FLUKE_CPPFLAGS) $(CXXFLAGS) -m64
+
+debug ?= no
 
 ifeq ($(debug),no)
 	FLUKE_CXXFLAGS += -Ofast -march=native

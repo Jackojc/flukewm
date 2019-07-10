@@ -26,5 +26,4 @@ install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
 
 script:
-  - make debug=no pgo=no
   - make debug=yes
