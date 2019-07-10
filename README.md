@@ -49,18 +49,26 @@ bspwm makes uses of a server/client control model with bspc which is both good a
 - Query information about various things (currently focused display, currently focused window, primary display etc.)
 
 ### prerequisites
-- Any C++17 compliant compiler should work (Tested with Clang and GCC)
-- [hyperfine](https://github.com/sharkdp/hyperfine) (for benchmarking or release builds which make use of PGO)
+- Any C++17 compliant compiler should work (tested with Clang and GCC)
 - Libraries:
 	- `xcb`
 	- `xcb-util`
 	- `xcb-randr`
 	- `xcb-icccm`
+- [hyperfine](https://github.com/sharkdp/hyperfine) (optional for benchmarking)
 - A running X server for fluke to communicate with
 
 ### build & run
-- Run `make` or `make rel` for debug and release build respectively (uses GCC by default)
+- Run `make debug=yes` or `make` for debug and release build respectively (uses GCC by default)
 - Binary will be placed in `build/flukewm` or you can run using the symlink in the root of the project, `./flukewm`
+
+### installation
+> Optionally configure install directory with PREFIX variable.
+
+To install flukewm, simply run `make install` (you might need root).
+To uninstall, run `make uninstall`
+
+You may also use `make dist` if you wish to package flukewm as an archive.
 
 ### license
 This project uses the GPLv2 license. (check [LICENSE.md](LICENSE.md))
