@@ -10,5 +10,7 @@
 #include <structures/connection.hpp>
 #include <structures/request_buffer.hpp>
 
-#include <requests.hpp>
-#include <other_requests.hpp>
+#include <core.hpp>
+#include <helpers.hpp>
+
+#include <frontend/window.hpp>

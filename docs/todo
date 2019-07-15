@@ -2,15 +2,56 @@ flukewm --move x y --resize w h 0x00012000 0x12000120
 flukem [[--action [args...]] [--action [args...]]...] [wid...]
 
 
-- add phd and pfd functions for getting what display any window is on
 
 
-- get/set mouse position
-- query displays
-- display object
-- get all displays, return list of display objects
-- get all windows, returns list of window objects
-- add interactive moving and resizing
-- get wew port working
-- statusbar using xsetroot -name, surely wew would output an event if root window name is changed, this might allow me ot update lemonbar or something when the root window name is changed, could also set it so that on certain keypresses, it refreshes the statusbar
+statusbar using xsetroot -name, surely wew would output an event if root window name is changed, this might allow me ot update lemonbar or something when the root window name is changed, could also set it so that on certain keypresses, it refreshes the statusbar
+
+
+
+
+
+
+
+// implement these:
+
+GetWindowName
+SetWindowName
+
+SetPointerPos
+
+GetDisplayPos           = Get display coords
+GetDisplaySize          = Get display resolution
+GetDisplayRect          = Get display coords and resolution
+
+SetWindowFocus          = Change window focus
+GetWindowFocus          = Get focused window
+
+SetWindowVisibility     = map/unmap a window
+GetWindowVisibility     = check mapped status
+
+SetWindowTracked        = ignore/notice a window
+GetWindowTracked        = checked ignored status
+
+KillWindow              = force close a window
+CloseWindow             = close a window gracefully
+
+SetWindowStackingOrder
+GetWindowStackingOrder
+
+SetWindowBorderColour
+SetWindowBorderSize
+GetWindowBorderColour
+GetWindowBorderSize
+
+ListWindows
+ListDisplays
+
+GetDisplayFocus
+SetDisplayFocus
+
+GetPrimaryDisplay
+SetPrimaryDisplay
+
+GetHoveredWindow        = get window with mouse on top
+GetHoveredDisplay       = get display mouse is on
 

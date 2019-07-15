@@ -10,7 +10,7 @@ TARGET=flukewm
 WFLAGS=$(CXXWARN) -Wall -Wextra -Wcast-align -Wcast-qual -Wnon-virtual-dtor -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wstrict-overflow=4 -Wundef -Wno-unused
 
 
-GENERAL_FLAGS=$(CXXFLAGS) -msse2 -march=native -m64
+GENERAL_FLAGS=$(CXXFLAGS) -march=native -m64
 RELEASE_FLAGS=$(GENERAL_FLAGS) -Ofast -finline-limit=200 -fipa-pta -fwhole-program -fsplit-loops -funswitch-loops
 DEBUG_FLAGS=$(GENERAL_FLAGS) -O2 -g
 

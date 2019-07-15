@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <utility>
 
 #include <util/exception.hpp>
@@ -10,7 +9,7 @@
 #include <structures/connection.hpp>
 #include <structures/common.hpp>
 
-#include <requests.hpp>
+#include <core.hpp>
 
 
 namespace fluke {
