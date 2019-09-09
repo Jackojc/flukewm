@@ -1,97 +1,67 @@
 #include <iostream>
 #include <vector>
+#include <string_view>
+#include <array>
+#include <algorithm>
 #include <cstdlib>
 
 #include <tinge.hpp>
 #include <fluke.hpp>
 
+enum {
+	WINDOW_TELEPORT,
+	WINDOW_RESIZE,
+	WINDOW_MOVE,
+	WINDOW_GROW,
+};
+
+constexpr std::pair<std::string_view, int> action_type[] = {
+
+	{ "wtp", WINDOW_TELEPORT },
+	{ "wrs", WINDOW_RESIZE   },
+	{ "wmv", WINDOW_MOVE     },
+	{ "wgr", WINDOW_GROW     },
+
+};
+
+
 int main(int argc, const char* argv[]) {
-	// if (argc < 2) {
-	// 	tinge::errorln_em("error: ", "no window specified!");
-	// 	return 1;
-	// }
+
+	std::vector<std::vector<std::string_view>> args;
+
+	args.reserve(argc);
+	for (auto& v: args)
+		v.reserve(argc);
+
+	for (int i = 1; i < argc; ++i) {
+		auto val = argv[i];
+		auto action = std::find_if(std::begin(action_type), std::end(action_type), [&val] (auto& p) {
+			return val == p.first;
+		});
+
+		if (action == std::end(action_type)) {
+			tinge::errorln("unknown action '", action, "'!");
+			return 1;
+		}
+
+		auto [str, type] = *action;
+
+		switch (type) {
 
 
-
-	/*
-		todo:
-			- Make the specialised requests inherit from ConfigureWindow etc to cut down
-			  on code duplication.
+		}
 
 
-			// implement these:
+	}
 
-			GetWindowName
-			SetWindowName
-
-			[x] GetPointerPos
-			SetPointerPos
-
-			GetDisplayPos           = Get display coords
-			GetDisplaySize          = Get display resolution
-			GetDisplayRect          = Get display coords and resolution
-
-			SetWindowFocus          = Change window focus
-			GetWindowFocus          = Get focused window
-
-			SetWindowVisibility     = map/unmap a window
-			GetWindowVisibility     = check mapped status
-
-			SetWindowTracked        = ignore/notice a window
-			GetWindowTracked        = checked ignored status
-
-			KillWindow              = force close a window
-			CloseWindow             = close a window gracefully
-
-			SetWindowStackingOrder
-			GetWindowStackingOrder
-
-			SetWindowBorderColour
-			SetWindowBorderSize
-			GetWindowBorderColour
-			GetWindowBorderSize
-
-			ListWindows
-			ListDisplays
-
-			GetDisplayFocus
-			SetDisplayFocus
-
-			GetPrimaryDisplay
-			SetPrimaryDisplay
-
-			GetHoveredWindow        = get window with mouse on top
-			GetHoveredDisplay       = get display mouse is on
-	*/
 
 
 	fluke::Connection conn;
-	// xcb_window_t win = std::strtoul(argv[1], nullptr, 16);
 
 
-	try {
-		auto pos = fluke::RequestBuffer{
-			fluke::GetPointerPos(conn)
-			// fluke::SetWindowRect(conn, win, {0, 0, 1364, 766}),
-			// fluke::GetWindowRect(conn, win)
-		}.get();
 
 
-		std::cerr << pos.x << ", " << pos.y << '\n';
-
-		// std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
-
-		// conn.sync();
-
-		// rect = fluke::GetWindowRect(conn, win).get();
-		// std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
-
-
-	} catch (const std::exception& e) {
-		tinge::errorln_em("error: ", e.what());
-		return 1;
-	}
-
+	conn.sync();
 
 	return 0;
 }
