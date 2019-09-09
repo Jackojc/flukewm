@@ -29,23 +29,23 @@ clean:
 
 dist: clean
 	mkdir -p flukewm-tmp/
-	cp -Rf LICENSE README.md Makefile main.cpp src/ modules/ docs/ flukewm-tmp/
+	cp -Rf LICENSE README.md Makefile utils/*.cpp fluke/ modules/ docs/ flukewm-tmp/
 	tar -cf - flukewm-tmp/ | gzip > flukewm.tar.gz
 	rm -rf flukewm-tmp/
 
 	@echo "\n \033[32;1m=>\033[39m Created flukewm.tar.gz\033[0m\n"
 
-install: flukewm
-	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp -f ./build/flukewm $(DESTDIR)$(PREFIX)/bin
-	chmod 755 $(DESTDIR)$(PREFIX)/bin/flukewm
+# install: flukewm
+# 	mkdir -p $(DESTDIR)$(PREFIX)/bin
+# 	cp -f ./build/* $(DESTDIR)$(PREFIX)/bin
+# 	chmod 755 $(DESTDIR)$(PREFIX)/bin/*
 
-	@echo "\n \033[32;1m=>\033[39m Installed flukewm to $(DESTDIR)$(PREFIX)/bin/flukewm\033[0m\n"
+# 	@echo "\n \033[32;1m=>\033[39m Installed flukewm to $(DESTDIR)$(PREFIX)/bin/flukewm\033[0m\n"
 
-uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/flukewm
+# uninstall:
+# 	rm -f $(DESTDIR)$(PREFIX)/bin/flukewm
 
-	@echo "\n \033[32;1m=>\033[39m Removed flukewm\033[0m\n"
+# 	@echo "\n \033[32;1m=>\033[39m Removed flukewm\033[0m\n"
 
 .PHONY: all options clean dist install uninstall
 

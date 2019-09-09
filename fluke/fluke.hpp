@@ -12,5 +12,3 @@
 
 #include <core.hpp>
 #include <helpers.hpp>
-
-#include <frontend/window.hpp>
