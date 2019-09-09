@@ -24,7 +24,6 @@ FLUKE_CXXWARN = $(CXXWARN) -Wall -Wextra -Wcast-align -Wcast-qual -Wnon-virtual-
 
 logging =
 
-
 # optimisation flags
 FLUKE_CXXFLAGS = $(INCS) $(FLUKE_CPPFLAGS) $(CXXFLAGS) -m64
 
@@ -41,14 +40,9 @@ ifeq ($(debug),no)
 		FLUKE_CXXFLAGS += -fwhole-program-vtables -fforce-emit-vtables
 	endif
 
-	pgo ?= yes
-
 else ifeq ($(debug),yes)
 	FLUKE_CXXFLAGS += $(INCS) $(FLUKE_CPPFLAGS) $(CXXFLAGS) -Og -march=native
-
 	symbols ?= yes
-	pgo ?= no
-
 else
 $(error debug should be either yes or no)
 endif
@@ -62,30 +56,3 @@ ifeq ($(symbols),yes)
 else ifneq ($(symbols),no)
 $(error symbols should be either yes or no)
 endif
-
-
-
-
-# profile guided optimisation
-ifeq ($(pgo),yes)
-	ifeq (,$(wildcard ./*.gcda))
-		FLUKE_CXXFLAGS += -fprofile-generate
-		logging += \033[32;1m=>\033[39m PGO enabled, run program and recompile.\033[0m
-
-	else
-		FLUKE_CXXFLAGS += -fprofile-use
-		logging += \033[32;1m=>\033[39m Used PGO profile.\033[0m
-	endif
-
-	# compiler specific flags
-	ifeq ($(CXX),g++)
-		# FLUKE_CXXFLAGS +=
-	else ifeq ($(CXX),clang++)
-		# FLUKE_CXXFLAGS +=
-	endif
-
-
-else ifneq ($(pgo),no)
-$(error pgo should be either yes or no)
-endif
-

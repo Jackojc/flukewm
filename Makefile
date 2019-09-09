@@ -4,7 +4,7 @@
 
 include config.mk
 
-SRC=main.cpp
+SRC=$(wildcard utils/*.cpp)
 
 all: options flukewm
 
@@ -13,15 +13,14 @@ config:
 
 options:
 	@echo " \033[32;1m=>\033[39m Debug    = $(debug)\033[0m"
-	@echo " \033[32;1m=>\033[39m PGO      = $(pgo)\033[0m"
 	@echo " \033[32;1m=>\033[39m Symbols  = $(symbols)\033[0m"
 
-	@echo "\n \033[32m=>\033[39m CXX      = \033[0m$(CXX)"
+	@echo "\n \033[32m=>\033[39m CXX    = \033[0m$(CXX)"
 	@echo " \033[32m=>\033[39m CXXWARN  = \033[0m$(FLUKE_CXXWARN)"
 	@echo " \033[32m=>\033[39m CXXFLAGS = \033[0m$(FLUKE_CXXFLAGS)"
 	@echo " \033[32m=>\033[39m LDFLAGS  = \033[0m$(FLUKE_LDFLAGS)"
 
-flukewm: config
+flukewm: config $(SRC)
 	$(CXX) -std=c++17 $(FLUKE_CXXWARN) $(FLUKE_CXXFLAGS) -o build/$@ $(SRC) $(FLUKE_LDFLAGS)
 	@echo "$(logging)"
 
