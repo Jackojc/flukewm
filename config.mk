@@ -8,7 +8,7 @@ XCBLIB = /usr/lib/
 PKG_CONFIG = pkg-config
 
 # includes and libs
-INCS = -I$(XCBINC) -Isrc/ -I. -Imodules/tinge/
+INCS = -I$(XCBINC) -Ifluke/ -I. -Imodules/tinge/
 LIBS = -L$(XCBLIB) -lxcb -lxcb-util -lxcb-randr -lxcb-icccm $(LDLIBS)
 
 

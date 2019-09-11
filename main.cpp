@@ -1,67 +1,61 @@
 #include <iostream>
-#include <vector>
-#include <string_view>
 #include <array>
-#include <algorithm>
-#include <cstdlib>
+#include <vector>
+#include <string>
+#include <map>
 
 #include <tinge.hpp>
 #include <fluke.hpp>
 
-enum {
-	WINDOW_TELEPORT,
-	WINDOW_RESIZE,
-	WINDOW_MOVE,
-	WINDOW_GROW,
+#include <utils/atomget.cpp>
+#include <utils/atomset.cpp>
+#include <utils/binpack.cpp>
+#include <utils/center.cpp>
+#include <utils/focus.cpp>
+#include <utils/grow.cpp>
+#include <utils/move.cpp>
+#include <utils/shrink.cpp>
+
+
+
+using callback = int(*)(fluke::Connection&, std::vector<std::string>&);
+
+std::map<std::string_view, callback> funcs = {
+	{ "atomget", fluke::utils::atomget },
+	{ "atomset", fluke::utils::atomset },
+	{ "binpack", fluke::utils::binpack },
+	{ "center",  fluke::utils::center  },
+	{ "focus",   fluke::utils::focus   },
+	{ "grow",    fluke::utils::grow    },
+	{ "move",    fluke::utils::move    },
+	{ "shrink",  fluke::utils::shrink  },
 };
 
-constexpr std::pair<std::string_view, int> action_type[] = {
 
-	{ "wtp", WINDOW_TELEPORT },
-	{ "wrs", WINDOW_RESIZE   },
-	{ "wmv", WINDOW_MOVE     },
-	{ "wgr", WINDOW_GROW     },
 
-};
-
+// flukewm <action> [args...]
 
 int main(int argc, const char* argv[]) {
+	fluke::Connection conn;
 
-	std::vector<std::vector<std::string_view>> args;
-
-	args.reserve(argc);
-	for (auto& v: args)
-		v.reserve(argc);
-
-	for (int i = 1; i < argc; ++i) {
-		auto val = argv[i];
-		auto action = std::find_if(std::begin(action_type), std::end(action_type), [&val] (auto& p) {
-			return val == p.first;
-		});
-
-		if (action == std::end(action_type)) {
-			tinge::errorln("unknown action '", action, "'!");
-			return 1;
-		}
-
-		auto [str, type] = *action;
-
-		switch (type) {
-
-
-		}
-
-
+	if (argc == 1) {
+		tinge::errorln("specify an action!");
+		return 1;
 	}
 
 
+	try {
+		// See if a callback exists, if so, call it and pass connection & vector of args.
+		std::vector<std::string> args{ argv + 2, argv + argc };
+		return funcs.at(argv[1])(
+			conn, args
+		);
 
-	fluke::Connection conn;
+	} catch (const std::out_of_range&) {
+		tinge::errorln("unknown action!");
+		return 1;
+	}
 
-
-
-
-	conn.sync();
 
 	return 0;
 }

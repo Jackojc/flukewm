@@ -4,8 +4,6 @@
 
 include config.mk
 
-SRC=$(wildcard utils/*.cpp)
-
 all: options flukewm
 
 config:
@@ -20,8 +18,8 @@ options:
 	@echo " \033[32m=>\033[39m CXXFLAGS = \033[0m$(FLUKE_CXXFLAGS)"
 	@echo " \033[32m=>\033[39m LDFLAGS  = \033[0m$(FLUKE_LDFLAGS)"
 
-flukewm: config $(SRC)
-	$(CXX) -std=c++17 $(FLUKE_CXXWARN) $(FLUKE_CXXFLAGS) -o build/$@ $(SRC) $(FLUKE_LDFLAGS)
+flukewm: config
+	$(CXX) -std=c++17 $(FLUKE_CXXWARN) $(FLUKE_CXXFLAGS) -o build/flukewm main.cpp $(FLUKE_LDFLAGS)
 	@echo "$(logging)"
 
 clean:
@@ -29,7 +27,7 @@ clean:
 
 dist: clean
 	mkdir -p flukewm-tmp/
-	cp -Rf LICENSE README.md Makefile utils/*.cpp fluke/ modules/ docs/ flukewm-tmp/
+	cp -Rf LICENSE README.md Makefile main.cpp fluke/ modules/ docs/ flukewm-tmp/
 	tar -cf - flukewm-tmp/ | gzip > flukewm.tar.gz
 	rm -rf flukewm-tmp/
 
