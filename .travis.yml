@@ -42,7 +42,7 @@ addons:
     - libxcb-keysyms1-dev
 
 before_install:
-	eval "${JOBS_EVAL}"
+	- eval "${JOBS_EVAL}"
 
 script:
   - make
