@@ -7,7 +7,7 @@
 ```
 
 # fluke window manager
-A simple, fast and efficient window manager for X.
+A simple, fast and efficient window manager for X, made with C++ & XCB.
 
 [![build](https://img.shields.io/travis/Jackojc/flukewm.svg?style=flat)](https://travis-ci.org/Jackojc/flukewm)
 ![c++](https://img.shields.io/badge/c%2B%2B-%3E%3D17-blue.svg?style=flat)
@@ -16,37 +16,30 @@ A simple, fast and efficient window manager for X.
 [![issues](https://img.shields.io/github/issues/Jackojc/flukewm.svg?style=flat)](https://github.com/Jackojc/flukewm/issues)
 [![discord](https://img.shields.io/discord/537732103765229590.svg?label=discord&style=flat)](https://discord.gg/RmgjcES)
 ### what is fluke?
-Fluke is designed to be a simple and fast controller for X. It can manipulate windows in various ways like resizing, moving, hiding etc. It is intended for use with a hotkey daemon like [sxhkd](https://github.com/baskerville/sxhkd). The hotkey daemon will call flukewm _as needed_ to perform various operations.
+Fluke is a simple (but not extremely barebones) window manager for X which uses XCB for more efficient asynchronous IO. Fluke is designed to be configured through source (á la dwm).
 
 ### rationale
-I wanted a very minimal window manager that could be scripted with ease. I spent a couple of years using [bspwm](https://github.com/baskerville/bspwm) but it felt a bit too feature rich for my needs and was required to run in the background alongside X at all times.
-
-bspwm makes uses of a server/client control model with bspc which is both good and bad. It's good in that it is very easy to script and bad in that it comes at the cost of some latency and extra resource usage.
+I wanted a very minimal window manager that suited my workflow, had good hotplug multimonitor support and was written in something a little bit less cryptic than C. I never really found what I was looking for in other window managers and decided to give it a try myself.
 
 ### features
 > The planned features list is by no means exhaustive, it's just what I have managed to think of right now.
 
 #### current
-- Move, resize windows
-- Retrieve cursor position relative to root window
-- Close/Kill windows
-
-#### planned
-- Focus windows (by id, direction, monitor)
-- Toggle fullscreen
-- Add some grids/layouts
-- Grow/Shrink windows
-- Snap windows left,right,top,bottom
-- Center a window
-- Resize window to a percentage of screen size
-- Workspaces
+- Focus windows using the mouse.
+- Adopt orphaned windows by default (allows you to restart flukewm in the case of a crash and not lose any work.)
 - Window borders
-- Focus on cursor hover
-- Implement a way to update a statusbar using xsetroot (something like dwm)
-- Move/resize windows using the mouse
-- Groups (seperate from workspaces in that you hide or show them regardless of what workspace you're on)
-- Respect EWMH for docks, notifications etc.
-- Query information about various things (currently focused display, currently focused window, primary display etc.)
+- Hooks which run every N ms
+
+#### planned/ideas
+- Move & resize windows
+- Fullscreen windows
+- Center windows
+- Window snapping
+- Workspaces (N per monitor)
+- Groups/Scratchpad (seperate from workspaces in that you hide or show them regardless of what workspace you're on)
+- _Basic_ EWMH support for docks, notifications, respectful closing of windows etc.
+- Monitor hotplug support (automatically re-adjust windows & layout, maybe a built in autorandr functionality?)
+- Keybindings
 
 ### prerequisites
 - Any C++17 compliant compiler should work (tested with Clang and GCC)
@@ -55,26 +48,19 @@ bspwm makes uses of a server/client control model with bspc which is both good a
 	- `xcb-util`
 	- `xcb-randr`
 	- `xcb-icccm`
-- [hyperfine](https://github.com/sharkdp/hyperfine) (optional for benchmarking)
-- A running X server for fluke to communicate with
 
 ### build & run
-- Run `make debug=yes` or `make` for debug and release build respectively (uses GCC by default)
+- Run `make` or `make debug=no symbols=no` for debug and release build respectively (uses GCC by default)
 - Binary will be placed in `build/flukewm` or you can run using the symlink in the root of the project, `./flukewm`
 
 ### installation
-> Optionally configure install directory with PREFIX variable.
-
-To install flukewm, simply run `make install` (you might need root).
-To uninstall, run `make uninstall`
-
-You may also use `make dist` if you wish to package flukewm as an archive.
+> todo...
 
 ### license
 This project uses the GPLv2 license. (check [LICENSE.md](LICENSE.md))
 
 ### acknowledgements
-This project was inspired by:
+This project was inspired and helped by the source code of the following projects:
 - [bspwm](https://github.com/baskerville/bspwm)
 - [wmutils](https://github.com/wmutils/core)
 - [disputils](https://github.com/tudurom/disputils)

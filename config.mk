@@ -1,91 +1,50 @@
-# options
-PREFIX = /usr/local
-MANPREFIX = $(PREFIX)/share/man
+SRC=main.cpp
+STD=c++17
 
-XCBINC = /usr/include/xcb/
-XCBLIB = /usr/lib/
-
-PKG_CONFIG = pkg-config
-
-# includes and libs
-INCS = -I$(XCBINC) -Isrc/ -I. -Imodules/tinge/
-LIBS = -L$(XCBLIB) -lxcb -lxcb-util -lxcb-randr -lxcb-icccm $(LDLIBS)
+BUILD_DIR=build
+TARGET=flukewm
 
 
-# preprocessor flags
-FLUKE_CPPFLAGS = $(CPPFLAGS)
-
-# linker flags
-FLUKE_LDFLAGS = $(LIBS) $(LDFLAGS) -static-libstdc++ -static-libgcc
-
-# warnings
-FLUKE_CXXWARN = $(CXXWARN) -Wall -Wextra -Wcast-align -Wcast-qual -Wnon-virtual-dtor -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wstrict-overflow=4 -Wundef -Wno-unused
+# Include & Link
+INCS=-I. -Isrc/ -Imodules/tinge/
+LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
 
 
-logging =
+# Options
+PROGRAM_CPPFLAGS=$(CPPFLAGS)
+PROGRAM_LDFLAGS=$(LIBS) $(LDFLAGS)
+
+PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow -Wundef -Wno-unused $(CXXWARN)
 
 
-# optimisation flags
-FLUKE_CXXFLAGS = $(INCS) $(FLUKE_CPPFLAGS) $(CXXFLAGS) -m64
+# Make Flags
+debug ?= yes
+symbols ?= yes
 
-debug ?= no
 
+# Debugging
 ifeq ($(debug),no)
-	FLUKE_CXXFLAGS += -Ofast -march=native
-	FLUKE_LDFLAGS += -flto
-
-	ifeq ($(CXX),g++)
-		FLUKE_CXXFLAGS += -finline-limit=200 -fipa-pta -fsplit-loops -funswitch-loops -fwhole-program
-
-	else ifeq ($(CXX),clang++)
-		FLUKE_CXXFLAGS += -fwhole-program-vtables -fforce-emit-vtables
-	endif
-
-	pgo ?= yes
+	symbols ?= no
+	PROGRAM_CXXFLAGS=-O3 -march=native -flto $(CXXFLAGS)
 
 else ifeq ($(debug),yes)
-	FLUKE_CXXFLAGS += $(INCS) $(FLUKE_CPPFLAGS) $(CXXFLAGS) -Og -march=native
-
 	symbols ?= yes
-	pgo ?= no
+	PROGRAM_CXXFLAGS=-Og -march=native
 
 else
 $(error debug should be either yes or no)
 endif
 
 
-
-# debugging symbols
-symbols ?= no
+# Debugging Symbols
 ifeq ($(symbols),yes)
-	FLUKE_CXXFLAGS += -g
+	PROGRAM_CXXFLAGS += -g
+
 else ifneq ($(symbols),no)
 $(error symbols should be either yes or no)
 endif
 
 
-
-
-# profile guided optimisation
-ifeq ($(pgo),yes)
-	ifeq (,$(wildcard ./*.gcda))
-		FLUKE_CXXFLAGS += -fprofile-generate
-		logging += \033[32;1m=>\033[39m PGO enabled, run program and recompile.\033[0m
-
-	else
-		FLUKE_CXXFLAGS += -fprofile-use
-		logging += \033[32;1m=>\033[39m Used PGO profile.\033[0m
-	endif
-
-	# compiler specific flags
-	ifeq ($(CXX),g++)
-		# FLUKE_CXXFLAGS +=
-	else ifeq ($(CXX),clang++)
-		# FLUKE_CXXFLAGS +=
-	endif
-
-
-else ifneq ($(pgo),no)
-$(error pgo should be either yes or no)
-endif
+# Accumulate all flags
+COMPILE_COMMAND=$(CXX) $(PROGRAM_LDFLAGS) -std=$(STD) $(PROGRAM_WARNINGS) $(PROGRAM_CXXFLAGS) $(INCS) $(PROGRAM_CPPFLAGS) -o $(BUILD_DIR)/$(TARGET) $(SRC)
 

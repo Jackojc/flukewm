@@ -1,97 +1,97 @@
 #include <iostream>
-#include <vector>
-#include <cstdlib>
+#include <chrono>
+#include <thread>
 
 #include <tinge.hpp>
 #include <fluke.hpp>
 
-int main(int argc, const char* argv[]) {
-	// if (argc < 2) {
-	// 	tinge::errorln_em("error: ", "no window specified!");
-	// 	return 1;
-	// }
+
+void test(fluke::Connection&) {
+	tinge::successln("hello from hook1");
+}
 
 
-
-	/*
-		todo:
-			- Make the specialised requests inherit from ConfigureWindow etc to cut down
-			  on code duplication.
-
-
-			// implement these:
-
-			GetWindowName
-			SetWindowName
-
-			[x] GetPointerPos
-			SetPointerPos
-
-			GetDisplayPos           = Get display coords
-			GetDisplaySize          = Get display resolution
-			GetDisplayRect          = Get display coords and resolution
-
-			SetWindowFocus          = Change window focus
-			GetWindowFocus          = Get focused window
-
-			SetWindowVisibility     = map/unmap a window
-			GetWindowVisibility     = check mapped status
-
-			SetWindowTracked        = ignore/notice a window
-			GetWindowTracked        = checked ignored status
-
-			KillWindow              = force close a window
-			CloseWindow             = close a window gracefully
-
-			SetWindowStackingOrder
-			GetWindowStackingOrder
-
-			SetWindowBorderColour
-			SetWindowBorderSize
-			GetWindowBorderColour
-			GetWindowBorderSize
-
-			ListWindows
-			ListDisplays
-
-			GetDisplayFocus
-			SetDisplayFocus
-
-			GetPrimaryDisplay
-			SetPrimaryDisplay
-
-			GetHoveredWindow        = get window with mouse on top
-			GetHoveredDisplay       = get display mouse is on
-	*/
-
-
-	fluke::Connection conn;
-	// xcb_window_t win = std::strtoul(argv[1], nullptr, 16);
-
-
+int main() {
 	try {
-		auto pos = fluke::RequestBuffer{
-			fluke::GetPointerPos(conn)
-			// fluke::SetWindowRect(conn, win, {0, 0, 1364, 766}),
-			// fluke::GetWindowRect(conn, win)
-		}.get();
+		using namespace std::chrono_literals;
+
+		fluke::Connection conn;
+
+		// register to receive window manager events. only one window manager can be active at one time.
+		fluke::SetWindowAttributes{conn, conn.root(), XCB_CW_EVENT_MASK, &fluke::XCB_WINDOWMANAGER_EVENTS}.get();
+
+		// adopt any windows which were open at the time of fluke's launch.
+		fluke::adopt_orphaned_windows(conn);
 
 
-		std::cerr << pos.x << ", " << pos.y << '\n';
+		// custom user hooks
+		constexpr auto hooks = fluke::make_hooks(
+			fluke::HookEntry{ 1000, &test }
+		);
 
-		// std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
+		constexpr auto events = fluke::make_events(
+			fluke::EventEntry{ XCB_ENTER_NOTIFY, &fluke::event_handlers::event_enter     },
+			fluke::EventEntry{ XCB_LEAVE_NOTIFY, &fluke::event_handlers::event_leave     },
+			fluke::EventEntry{ XCB_FOCUS_IN,     &fluke::event_handlers::event_focus_in  },
+			fluke::EventEntry{ XCB_FOCUS_OUT,    &fluke::event_handlers::event_focus_out }
+		);
 
-		// conn.sync();
-
-		// rect = fluke::GetWindowRect(conn, win).get();
-		// std::cerr << rect.x << ", " << rect.y << ", " << rect.w << ", " << rect.h << '\n';
 
 
-	} catch (const std::exception& e) {
-		tinge::errorln_em("error: ", e.what());
+		bool running = true;
+
+
+
+		// run hooks on seperate thread
+		std::thread hook_thread;
+
+		if constexpr(hooks.size() > 0) {
+			hook_thread = std::thread([&hooks, &running] () {
+				fluke::Connection hook_conn;
+
+				// find smallest delay and use that for sleep timer.
+				int delay = 99999;
+				for (auto&& [ms, func]: hooks) {
+					if (ms < delay)
+						delay = ms;
+				}
+
+				int current_ms = 0;
+
+				while (running) {
+					// handle user defined hooks.
+					fluke::handle_hooks(hook_conn, hooks, current_ms);
+					std::this_thread::sleep_for(std::chrono::milliseconds{delay});
+					current_ms += delay;
+				}
+			});
+		}
+
+
+		// main event loop
+		while (running) {
+			// handle events (blocking)
+			running = fluke::handle_events(conn, events);
+			tinge::warnln("looped");
+		}
+
+
+		// join hook_thread
+		if constexpr(hooks.size() > 0)
+			hook_thread.join();
+
+	} catch (const fluke::SetWindowAttributesError& e) {
+		tinge::errorln("fluke: another window manager is already running!");
 		return 1;
+
+	} catch (const fluke::ConnectionError& e) {
+		tinge::errorln("fluke: cannot connect to X!");
+		return 2;
+
+	} catch (const fluke::ScreenError& e) {
+		tinge::errorln("fluke: cannot get screen information!");
+		return 2;
 	}
 
-
-	return 0;
+	return 1;
 }

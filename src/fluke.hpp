@@ -1,14 +1,19 @@
 #pragma once
 
-#include <tinge.hpp>
+#include <xcb.hpp>
+#include <exception.hpp>
+#include <config.hpp>
 
-#include <util/xcb.hpp>
-#include <util/exception.hpp>
-#include <util/conversions.hpp>
-#include <util/tags.hpp>
+#include <connection.hpp>
 
-#include <structures/connection.hpp>
-#include <structures/request_buffer.hpp>
+#include <requests/request.hpp>
+#include <requests/request_buffer.hpp>
+#include <requests/request_container.hpp>
 
-#include <requests.hpp>
-#include <other_requests.hpp>
+#include <utils/zip.hpp>
+#include <utils/exec.hpp>
+#include <utils/misc.hpp>
+#include <utils/hooks.hpp>
+#include <utils/events.hpp>
+
+#include <event_handlers.hpp>
