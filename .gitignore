@@ -31,7 +31,6 @@
 *.out
 *.app
 
-modules/tinge
 test/
 build/
 old/
