@@ -127,11 +127,9 @@ namespace fluke {
 
 	template <size_t N>
 	void handle_hooks(fluke::Connection& conn, const HookArray<N>& hooks, int current_ms) {
-		if constexpr(hooks.size() > 0) {
-			for (auto&& [ms, func]: hooks) {
-				if (current_ms % ms == 0) {
-					func(conn);
-				}
+		for (auto&& [ms, func]: hooks) {
+			if (current_ms % ms == 0) {
+				func(conn);
 			}
 		}
 	}
@@ -358,7 +356,8 @@ int main() {
 			running = fluke::handle_events(conn, events);
 
 			// handle user defined hooks.
-			fluke::handle_hooks(conn, hooks, current_ms);
+			if constexpr(hooks.size() > 0)
+				fluke::handle_hooks(conn, hooks, current_ms);
 
 			// dont kill the cpu
 			std::this_thread::sleep_for(10ms);

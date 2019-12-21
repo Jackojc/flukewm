@@ -15,7 +15,7 @@ options:
 	@echo " ├\033[34m symbols\033[30m···\033[94;1m$(debug)\033[0m"
 	@echo " ├\033[31m compiler\033[30m··\033[91m$(CXX)\033[0m"
 	@echo " ├\033[31m warnings\033[30m··\033[91m$(PROGRAM_WARNINGS)\033[0m"
-	@echo " └\033[31m flags\033[30m·····\033[91m$(PROGRAM_CXXFLAGS)$(PROGRAM_LDFLAGS)\033[0m"
+	@echo " └\033[31m flags\033[30m·····\033[91m$(PROGRAM_CXXFLAGS) $(PROGRAM_LDFLAGS)\033[0m"
 
 flukewm: config
 	@$(COMPILE_COMMAND)
