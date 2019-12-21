@@ -31,8 +31,12 @@
 *.out
 *.app
 
+modules/tinge
+test/
 build/
 old/
+
+todo
 
 massif.out*
 callgrind.out*
@@ -40,3 +44,4 @@ cachgrind.out*
 perf.data*
 cg.out
 *.s
+

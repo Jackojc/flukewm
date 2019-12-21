@@ -2,14 +2,18 @@
 
 #include <type_traits>
 #include <memory>
+#include <utility>
+
 #include <cstdlib>
-#include <util/exception.hpp>
-#include <util/tags.hpp>
-#include <util/xcb.hpp>
-#include <structures/connection.hpp>
+
+#include <fluke.hpp>
+
+namespace fluke::detail {
+	struct GetterTag { };
+	struct SetterTag { };
+}
 
 namespace fluke {
-
 	template <typename T, typename C, typename R, typename Err>
 	struct Request {
 		using reply_t = std::unique_ptr<R, decltype(&std::free)>;
@@ -24,7 +28,7 @@ namespace fluke {
 		template <typename F>
 		auto get(F func) const {
 			if constexpr(std::is_same_v<tag_t, detail::GetterTag>) {
-				if (auto ret = reply_t{func(conn, cookie, nullptr), std::free}; ret)
+				if (auto ret = reply_t{func(conn, cookie, nullptr), std::free})
 					return ret;
 
 			} else if constexpr(std::is_same_v<tag_t, detail::SetterTag>) {
@@ -73,9 +77,10 @@ namespace fluke {
 	GET_REQUEST(GetRandrOutputPrimary, randr_get_output_primary)
 
 
-	// // Setters
+	// Setters
 	SET_REQUEST(SetWindowConfig,     configure_window)
 	SET_REQUEST(SetWindowAttributes, change_window_attributes)
+	SET_REQUEST(SetInputFocus,       set_input_focus)
 
 
 	#undef GET_REQUEST

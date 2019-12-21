@@ -7,43 +7,22 @@ include config.mk
 all: options flukewm
 
 config:
-	mkdir -p build/
+	@mkdir -p $(BUILD_DIR)
 
 options:
-	@echo " \033[32;1m=>\033[39m Debug    = $(debug)\033[0m"
-	@echo " \033[32;1m=>\033[39m Symbols  = $(symbols)\033[0m"
-
-	@echo "\n \033[32m=>\033[39m CXX    = \033[0m$(CXX)"
-	@echo " \033[32m=>\033[39m CXXWARN  = \033[0m$(FLUKE_CXXWARN)"
-	@echo " \033[32m=>\033[39m CXXFLAGS = \033[0m$(FLUKE_CXXFLAGS)"
-	@echo " \033[32m=>\033[39m LDFLAGS  = \033[0m$(FLUKE_LDFLAGS)"
+	@echo " ┌\033[32m target\033[30m····\033[92;1m$(TARGET)\033[0m"
+	@echo " ├\033[34m debug\033[30m·····\033[94;1m$(debug)\033[0m"
+	@echo " ├\033[34m symbols\033[30m···\033[94;1m$(debug)\033[0m"
+	@echo " ├\033[31m compiler\033[30m··\033[91m$(CXX)\033[0m"
+	@echo " ├\033[31m warnings\033[30m··\033[91m$(PROGRAM_WARNINGS)\033[0m"
+	@echo " └\033[31m flags\033[30m·····\033[91m$(PROGRAM_CXXFLAGS)$(PROGRAM_LDFLAGS)\033[0m"
 
 flukewm: config
-	$(CXX) -std=c++17 $(FLUKE_CXXWARN) $(FLUKE_CXXFLAGS) -o build/flukewm main.cpp $(FLUKE_LDFLAGS)
-	@echo "$(logging)"
+	@$(COMPILE_COMMAND)
 
 clean:
-	rm -rf build/ flukewm.tar.gz *.gcda
+	rm -rf $(BUILD_DIR)/ *.gcda
 
-dist: clean
-	mkdir -p flukewm-tmp/
-	cp -Rf LICENSE README.md Makefile main.cpp fluke/ modules/ docs/ flukewm-tmp/
-	tar -cf - flukewm-tmp/ | gzip > flukewm.tar.gz
-	rm -rf flukewm-tmp/
+.PHONY: all options clean
 
-	@echo "\n \033[32;1m=>\033[39m Created flukewm.tar.gz\033[0m\n"
-
-# install: flukewm
-# 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-# 	cp -f ./build/* $(DESTDIR)$(PREFIX)/bin
-# 	chmod 755 $(DESTDIR)$(PREFIX)/bin/*
-
-# 	@echo "\n \033[32;1m=>\033[39m Installed flukewm to $(DESTDIR)$(PREFIX)/bin/flukewm\033[0m\n"
-
-# uninstall:
-# 	rm -f $(DESTDIR)$(PREFIX)/bin/flukewm
-
-# 	@echo "\n \033[32;1m=>\033[39m Removed flukewm\033[0m\n"
-
-.PHONY: all options clean dist install uninstall
 
