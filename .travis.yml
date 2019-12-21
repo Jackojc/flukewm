@@ -16,10 +16,10 @@ matrix:
             - gcc-9
             - g++-9
             - libx11-xcb-dev
-            - libxcb-util0-dev
-            - libxcb-icccm4-dev
-            - libxcb-randr0-dev
-            - libxcb-keysyms1-dev
+            - libxcb-util-dev
+            - libxcb-icccm-dev
+            - libxcb-randr-dev
+            - libxcb-keysyms-dev
 
       env:
         - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
@@ -34,10 +34,10 @@ matrix:
           packages:
             - clang-9
             - libx11-xcb-dev
-            - libxcb-util0-dev
-            - libxcb-icccm4-dev
-            - libxcb-randr0-dev
-            - libxcb-keysyms1-dev
+            - libxcb-util-dev
+            - libxcb-icccm-dev
+            - libxcb-randr-dev
+            - libxcb-keysyms-dev
 
       env:
         - MATRIX_EVAL="CC=clang-9 CXX=clang++-9"
