@@ -12,8 +12,9 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            sourceline: 'ppa:ubuntu-toolchain-r/test'
           packages:
-            - g++-9
+            - gcc-9
             - libx11-xcb-dev
             - libxcb-util0-dev
             - libxcb-icccm4-dev
@@ -28,7 +29,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main'
+            - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-bionic-9 main'
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - clang-9
