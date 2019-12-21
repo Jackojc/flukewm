@@ -18,6 +18,7 @@ matrix:
             - gcc-9
             - g++-9
             - xcb
+            - xcb-proto
             - libx11-dev
             - libx11-xcb-dev
             - libxcb1-dev
@@ -40,6 +41,7 @@ matrix:
           packages:
             - clang-9
             - xcb
+            - xcb-proto
             - libx11-dev
             - libx11-xcb-dev
             - libxcb1-dev
