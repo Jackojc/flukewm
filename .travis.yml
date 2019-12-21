@@ -8,7 +8,7 @@ script:
 matrix:
   include:
     - os: linux
-    - language: cpp
+      language: cpp
       addons:
         apt:
           sources:
@@ -16,9 +16,10 @@ matrix:
           packages:
             - gcc-9
             - g++-9
+            - xcb
             - libx11-dev
             - libx11-xcb-dev
-            - libxcb-dev
+            - libxcb1-dev
             - libxcb-util-dev
             - libxcb-icccm4-dev
             - libxcb-randr0-dev
@@ -28,7 +29,7 @@ matrix:
         - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
 
     - os: linux
-    - language: cpp
+      language: cpp
       addons:
         apt:
           sources:
@@ -37,9 +38,10 @@ matrix:
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - clang-9
+            - xcb
             - libx11-dev
             - libx11-xcb-dev
-            - libxcb-dev
+            - libxcb1-dev
             - libxcb-util-dev
             - libxcb-icccm4-dev
             - libxcb-randr0-dev
