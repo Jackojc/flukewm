@@ -7,7 +7,7 @@
 ```
 
 # fluke window manager
-A simple, fast and efficient window manager for X, made with C++.
+A simple, fast and efficient window manager for X, made with C++ & XCB.
 
 [![build](https://img.shields.io/travis/Jackojc/flukewm.svg?style=flat)](https://travis-ci.org/Jackojc/flukewm)
 ![c++](https://img.shields.io/badge/c%2B%2B-%3E%3D17-blue.svg?style=flat)
@@ -16,7 +16,7 @@ A simple, fast and efficient window manager for X, made with C++.
 [![issues](https://img.shields.io/github/issues/Jackojc/flukewm.svg?style=flat)](https://github.com/Jackojc/flukewm/issues)
 [![discord](https://img.shields.io/discord/537732103765229590.svg?label=discord&style=flat)](https://discord.gg/RmgjcES)
 ### what is fluke?
-Fluke is a simple (but not extremely barebones) window manager for X. Fluke is designed to be configured through source (á la dwm).
+Fluke is a simple (but not extremely barebones) window manager for X which uses XCB for more efficient asynchronous IO. Fluke is designed to be configured through source (á la dwm).
 
 ### rationale
 I wanted a very minimal window manager that suited my workflow, had good hotplug multimonitor support and was written in something a little bit less cryptic than C. I never really found what I was looking for in other window managers and decided to give it a try myself.

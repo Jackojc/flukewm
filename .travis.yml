@@ -15,8 +15,8 @@ matrix:
             - ubuntu-toolchain-r-test
             - sourceline: 'ppa:ubuntu-toolchain-r/test'
           packages:
-            - gcc-9
-            - g++-9
+            - gcc-8
+            - g++-8
             - xcb
             - xcb-proto
             - libx11-dev
@@ -28,7 +28,7 @@ matrix:
             - libxcb-keysyms1-dev
 
       env:
-        - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
+        - MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
 
     - os: linux
       language: cpp
