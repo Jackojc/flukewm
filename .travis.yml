@@ -1,6 +1,6 @@
 language: cpp
 sudo: false
-dist: xenial
+dist: bionic
 
 script:
   - make
@@ -14,6 +14,12 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-9
+            - libx11-xcb-dev
+            - libxcb-util0-dev
+            - libxcb-icccm4-dev
+            - libxcb-randr0-dev
+            - libxcb-keysyms1-dev
+
       env:
         - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
 
@@ -26,6 +32,12 @@ matrix:
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - clang-9
+            - libx11-xcb-dev
+            - libxcb-util0-dev
+            - libxcb-icccm4-dev
+            - libxcb-randr0-dev
+            - libxcb-keysyms1-dev
+
       env:
         - MATRIX_EVAL="CC=clang-9 CXX=clang++-9"
 
@@ -36,7 +48,7 @@ addons:
   apt:
     packages:
     - libx11-xcb-dev
-    - libxcb-util-dev
+    - libxcb-util0-dev
     - libxcb-icccm4-dev
     - libxcb-randr0-dev
     - libxcb-keysyms1-dev
