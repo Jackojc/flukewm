@@ -1,6 +1,10 @@
 language: cpp
-sudo: false
+sudo: true
 dist: bionic
+
+compiler:
+  - g++
+  - clang++
 
 script:
   - make
@@ -15,8 +19,8 @@ matrix:
             - ubuntu-toolchain-r-test
             - sourceline: 'ppa:ubuntu-toolchain-r/test'
           packages:
-            - gcc-8
-            - g++-8
+            - gcc-9
+            - g++-9
             - xcb
             - xcb-proto
             - libx11-dev
@@ -28,7 +32,7 @@ matrix:
             - libxcb-keysyms1-dev
 
       env:
-        - MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+        - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
 
     - os: linux
       language: cpp
@@ -56,11 +60,6 @@ matrix:
 before_install:
   - eval "${MATRIX_EVAL}"
 
-addons:
-  apt:
-    packages:
-    - libx11-xcb-dev
-    - libxcb-util0-dev
-    - libxcb-icccm4-dev
-    - libxcb-randr0-dev
-    - libxcb-keysyms1-dev
+install:
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9 &&
+  - sudo update-alternatives --config gcc
