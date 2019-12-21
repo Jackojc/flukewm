@@ -39,6 +39,10 @@ namespace fluke {
 
 		// Functions
 		public:
+			xcb_connection_t* get() const {
+				return conn.get();
+			}
+
 			constexpr xcb_window_t root() const {
 				return screen->root;
 			}

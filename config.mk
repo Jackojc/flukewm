@@ -7,7 +7,7 @@ TARGET=flukewm
 
 # Include & Link
 INCS=-I. -Isrc/ -Imodules/tinge/
-LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm $(LDLIBS)
+LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
 
 
 # Options
@@ -46,5 +46,5 @@ endif
 
 
 # Accumulate all flags
-COMPILE_COMMAND=$(CXX) -std=$(STD) $(PROGRAM_WARNINGS) $(PROGRAM_CXXFLAGS) $(INCS) $(PROGRAM_CPPFLAGS) $(PROGRAM_LDFLAGS) -o $(BUILD_DIR)/$(TARGET) $(SRC)
+COMPILE_COMMAND=$(CXX) $(PROGRAM_LDFLAGS) -std=$(STD) $(PROGRAM_WARNINGS) $(PROGRAM_CXXFLAGS) $(INCS) $(PROGRAM_CPPFLAGS) -o $(BUILD_DIR)/$(TARGET) $(SRC)
 
