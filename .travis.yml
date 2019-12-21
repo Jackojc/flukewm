@@ -2,10 +2,6 @@ language: cpp
 sudo: true
 dist: bionic
 
-compiler:
-  - g++
-  - clang++
-
 script:
   - make
 
