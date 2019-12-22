@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iomanip>
+#include <sstream>
 #include <cstdint>
 
 extern "C" {
@@ -73,5 +75,17 @@ namespace fluke {
 	// 		return data.data();
 	// 	}
 	// };
+
+
+	// std::ostream& operator<<(std::ostream& os, xcb_window_t win) {
+	// 	return (os << "0x" << std::hex << win);
+	// }
+
+	template <typename T>
+	std::string to_hex(T&& arg) {
+		std::stringstream ss;
+		ss << "0x" << std::hex << arg;
+		return ss.str();
+	}
 
 }

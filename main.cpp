@@ -15,8 +15,14 @@ int main() {
 	try {
 		fluke::Connection conn;
 
-		// register to receive window manager events. only one window manager can be active at one time.
-		fluke::SetWindowAttributes{conn, conn.root(), XCB_CW_EVENT_MASK, &fluke::XCB_WINDOWMANAGER_EVENTS}.get();
+		try {
+			// register to receive window manager events. only one window manager can be active at one time.
+			fluke::SetWindowAttributes{conn, conn.root(), XCB_CW_EVENT_MASK, &fluke::XCB_WINDOWMANAGER_EVENTS}.get();
+
+		} catch (const fluke::SetWindowAttributesError& e) {
+			tinge::errorln("another window manager is already running!");
+			return 4;
+		}
 
 		// adopt any windows which were open at the time of fluke's launch.
 		fluke::adopt_orphaned_windows(conn);
@@ -68,12 +74,21 @@ int main() {
 		}
 
 
+		// commit requests
 		conn.flush();
 
 		// main event loop
 		while (running) {
-			// handle events (blocking)
-			running = fluke::handle_events(conn, events);
+			try {
+				// handle events (blocking)
+				running = fluke::handle_events(conn, events);
+
+			} catch (const fluke::SetWindowConfigError& e) {
+				tinge::errorln(e.what());
+
+			} catch (const fluke::SetWindowAttributesError& e) {
+				tinge::errorln(e.what());
+			}
 		}
 
 
@@ -81,10 +96,6 @@ int main() {
 		if constexpr(hooks.size() > 0)
 			hook_thread.join();
 
-	} catch (const fluke::SetWindowAttributesError& e) {
-		tinge::noticeln(e.what());
-		tinge::errorln("fluke: another window manager is already running!");
-		return 1;
 
 	} catch (const fluke::ConnectionError& e) {
 		tinge::errorln("fluke: cannot connect to X!");
@@ -92,8 +103,8 @@ int main() {
 
 	} catch (const fluke::ScreenError& e) {
 		tinge::errorln("fluke: cannot get screen information!");
-		return 2;
+		return 3;
 	}
 
-	return 1;
+	return 0;
 }

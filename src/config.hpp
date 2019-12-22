@@ -8,5 +8,7 @@ namespace fluke::constants {
 	constexpr uint32_t BORDER_COLOUR_ACTIVE   = 0xffffffff;
 
 	constexpr uint32_t BORDER_SIZE = 1;
+
+	constexpr bool DEBUG = true;
 }
 

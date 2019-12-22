@@ -25,7 +25,6 @@ namespace fluke {
 					throw fluke::ScreenError();
 			}
 
-
 			Connection(const Connection& other) {
 				conn = other.conn;
 				screen = other.screen;
