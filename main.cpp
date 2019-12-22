@@ -13,8 +13,6 @@ void test(fluke::Connection&) {
 
 int main() {
 	try {
-		using namespace std::chrono_literals;
-
 		fluke::Connection conn;
 
 		// register to receive window manager events. only one window manager can be active at one time.
@@ -26,20 +24,22 @@ int main() {
 
 		// custom user hooks
 		constexpr auto hooks = fluke::make_hooks(
-			fluke::HookEntry{ 1000, &test }
+			// fluke::HookEntry{ 1000, &test }
 		);
 
 		constexpr auto events = fluke::make_events(
-			fluke::EventEntry{ XCB_ENTER_NOTIFY, &fluke::event_handlers::event_enter     },
-			fluke::EventEntry{ XCB_LEAVE_NOTIFY, &fluke::event_handlers::event_leave     },
-			fluke::EventEntry{ XCB_FOCUS_IN,     &fluke::event_handlers::event_focus_in  },
-			fluke::EventEntry{ XCB_FOCUS_OUT,    &fluke::event_handlers::event_focus_out }
+			fluke::EventEntry{ XCB_ENTER_NOTIFY,      &fluke::event_handlers::event_enter     },
+			fluke::EventEntry{ XCB_LEAVE_NOTIFY,      &fluke::event_handlers::event_leave     },
+			fluke::EventEntry{ XCB_FOCUS_IN,          &fluke::event_handlers::event_focus_in  },
+			fluke::EventEntry{ XCB_FOCUS_OUT,         &fluke::event_handlers::event_focus_out },
+			fluke::EventEntry{ XCB_CREATE_NOTIFY,     &fluke::event_handlers::event_create    },
+			fluke::EventEntry{ XCB_MAP_REQUEST,       &fluke::event_handlers::event_map       },
+			fluke::EventEntry{ XCB_CONFIGURE_REQUEST, &fluke::event_handlers::event_configure }
 		);
 
 
 
 		bool running = true;
-
 
 
 		// run hooks on seperate thread
@@ -68,11 +68,12 @@ int main() {
 		}
 
 
+		conn.flush();
+
 		// main event loop
 		while (running) {
 			// handle events (blocking)
 			running = fluke::handle_events(conn, events);
-			tinge::warnln("looped");
 		}
 
 
@@ -81,6 +82,7 @@ int main() {
 			hook_thread.join();
 
 	} catch (const fluke::SetWindowAttributesError& e) {
+		tinge::noticeln(e.what());
 		tinge::errorln("fluke: another window manager is already running!");
 		return 1;
 

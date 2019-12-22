@@ -32,6 +32,8 @@ namespace fluke {
 	NEW_EXCEPTION_TYPE(SetWindowConfigError,     "could not configure window!")
 	NEW_EXCEPTION_TYPE(SetWindowAttributesError, "could not change window attributes!")
 	NEW_EXCEPTION_TYPE(SetInputFocusError,       "could not change focus!")
+	NEW_EXCEPTION_TYPE(SetWindowMappedError,     "could not map window!")
+	NEW_EXCEPTION_TYPE(SetWindowUnmappedError,   "could not unmap window!")
 
 }
 

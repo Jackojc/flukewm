@@ -22,8 +22,24 @@ namespace fluke {
 		fluke::Connection conn;
 		C cookie;
 
-		Request(const fluke::Connection& conn_, C cookie_)
+		constexpr Request(const fluke::Connection& conn_, C cookie_)
 			: conn(conn_), cookie(cookie_) {}
+
+		constexpr Request() {}
+
+		constexpr Request(const Request<T, C, T, Err>& other) {
+			conn = other.conn;
+			cookie = other.cookie;
+		}
+
+		constexpr Request<T, C, T, Err>& operator=(const Request<T, C, T, Err>& other) {
+			if (this != &other) {
+				conn = other.conn;
+				cookie = other.cookie;
+			}
+
+			return *this;
+		}
 
 		template <typename F>
 		auto get(F func) const {
@@ -58,6 +74,9 @@ namespace fluke {
 		struct name: Request<detail::SetterTag, xcb_void_cookie_t, xcb_generic_error_t, fluke::name##Error> { \
 			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
 				Request::Request(conn_, xcb_##type##_checked(conn_, std::forward<Ts>(args)...)) {} \
+			constexpr name(): \
+				Request::Request() {} \
+			using Request::operator=; \
 			auto get() const { return Request::get(xcb_request_check); } \
 		};
 
@@ -81,6 +100,8 @@ namespace fluke {
 	SET_REQUEST(SetWindowConfig,     configure_window)
 	SET_REQUEST(SetWindowAttributes, change_window_attributes)
 	SET_REQUEST(SetInputFocus,       set_input_focus)
+	SET_REQUEST(SetWindowMapped,     map_window)
+	SET_REQUEST(SetWindowUnmapped,   unmap_window)
 
 
 	#undef GET_REQUEST

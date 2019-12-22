@@ -26,6 +26,22 @@ namespace fluke {
 			}
 
 
+			Connection(const Connection& other) {
+				conn = other.conn;
+				screen = other.screen;
+			}
+
+
+			Connection& operator=(const Connection& other) {
+				if (this != &other) {
+					conn = other.conn;
+					screen = other.screen;
+				}
+
+				return *this;
+			}
+
+
 		// Implicit cast operators
 		public:
 			operator xcb_connection_t* () const {

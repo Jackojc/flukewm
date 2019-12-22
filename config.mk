@@ -12,7 +12,7 @@ LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
 
 # Options
 PROGRAM_CPPFLAGS=$(CPPFLAGS)
-PROGRAM_LDFLAGS=$(LIBS) $(LDFLAGS)
+PROGRAM_LDFLAGS=-s $(LIBS) $(LDFLAGS)
 
 PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow -Wundef -Wno-unused $(CXXWARN)
 
@@ -25,7 +25,7 @@ symbols ?= yes
 # Debugging
 ifeq ($(debug),no)
 	symbols ?= no
-	PROGRAM_CXXFLAGS=-O3 -march=native -flto $(CXXFLAGS)
+	PROGRAM_CXXFLAGS=-flto -O3 -march=native -flto $(CXXFLAGS)
 
 else ifeq ($(debug),yes)
 	symbols ?= yes

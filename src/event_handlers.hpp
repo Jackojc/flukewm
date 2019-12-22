@@ -48,8 +48,8 @@ namespace fluke::event_handlers {
 
 		// set borders
 		fluke::RequestBuffer{
-			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, fluke::data{constants::BORDER_SIZE}},
-			fluke::SetWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, fluke::data{constants::BORDER_COLOUR_ACTIVE}}
+			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE},
+			fluke::SetWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_ACTIVE}
 		}.get();
 	}
 
@@ -64,9 +64,63 @@ namespace fluke::event_handlers {
 
 		// set borders.
 		fluke::RequestBuffer{
-			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, fluke::data{constants::BORDER_SIZE}},
-			fluke::SetWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, fluke::data{constants::BORDER_COLOUR_INACTIVE}}
+			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE},
+			fluke::SetWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_INACTIVE}
 		}.get();
+	}
+
+
+
+
+
+	void event_create(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::CreateNotifyEvent>(std::move(e_));
+		xcb_window_t win = e->window;
+
+		if (fluke::GetWindowAttributes{conn, win}.get()->override_redirect)
+			return;
+
+		fluke::SetWindowAttributes{conn, win, XCB_CW_EVENT_MASK, &fluke::XCB_WINDOW_EVENTS}.get();
+	}
+
+
+
+	void event_map(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::MapNotifyEvent>(std::move(e_));
+		xcb_window_t win = e->event;
+
+		if (fluke::GetWindowAttributes{conn, win}.get()->override_redirect)
+			return;
+
+		fluke::SetWindowMapped{conn, win}.get();
+	}
+
+
+
+	void event_configure(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(e_));
+		xcb_window_t win = e->window;
+
+		if (fluke::GetWindowAttributes{conn, win}.get()->override_redirect)
+			return;
+
+		fluke::SetWindowConfig req_border;
+		fluke::SetWindowConfig req_stack;
+
+		// config border width
+		if (e->value_mask & XCB_CONFIG_WINDOW_BORDER_WIDTH)
+			req_border = fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE};
+
+		// config window stacking mode
+		if (e->value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
+			req_stack = fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_STACK_MODE, &e->stack_mode};
+
+		// config window rect
+		uint32_t values[] = { static_cast<uint32_t>(e->x), static_cast<uint32_t>(e->y), e->width, e->height };
+		fluke::SetWindowAttributes{conn, win, fluke::XCB_MOVE_RESIZE, values}.get();
+
+		req_border.get();
+		req_stack.get();
 	}
 }
 
