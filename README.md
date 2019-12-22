@@ -6,8 +6,10 @@
 |_| |_|\__,_|_|\_\___| \_/\_/ |_| |_| |_|
 ```
 
-# fluke window manager
+# fluke
 A simple, fast and efficient window manager for X, made with C++ & XCB.
+
+> note: this project is still under heavy development, so while suggestions and critisism are welcome, please bear in mind that the project is unfinished and not considered usable yet.
 
 [![build](https://img.shields.io/travis/Jackojc/flukewm.svg?style=flat)](https://travis-ci.org/Jackojc/flukewm)
 ![c++](https://img.shields.io/badge/c%2B%2B-%3E%3D17-blue.svg?style=flat)
@@ -16,7 +18,7 @@ A simple, fast and efficient window manager for X, made with C++ & XCB.
 [![issues](https://img.shields.io/github/issues/Jackojc/flukewm.svg?style=flat)](https://github.com/Jackojc/flukewm/issues)
 [![discord](https://img.shields.io/discord/537732103765229590.svg?label=discord&style=flat)](https://discord.gg/RmgjcES)
 ### what is fluke?
-Fluke is a simple (but not extremely barebones) window manager for X which uses XCB for more efficient asynchronous IO. Fluke is designed to be configured through source (á la dwm).
+Fluke is a simple (but not extremely barebones) window manager for X which uses XCB for efficient asynchronous IO. Fluke is designed to be configured through source (á la dwm).
 
 ### rationale
 I wanted a very minimal window manager that suited my workflow, had good hotplug multimonitor support and was written in something a little bit less cryptic than C. I never really found what I was looking for in other window managers and decided to give it a try myself.
@@ -42,7 +44,7 @@ I wanted a very minimal window manager that suited my workflow, had good hotplug
 - Keybindings
 
 ### prerequisites
-- Any C++17 compliant compiler should work (tested with Clang and GCC)
+- Any C++17 compliant compiler should work (tested with clang-9 and gcc-9)
 - Libraries:
 	- `xcb`
 	- `xcb-util`
@@ -50,8 +52,9 @@ I wanted a very minimal window manager that suited my workflow, had good hotplug
 	- `xcb-icccm`
 
 ### build & run
-- Run `make` or `make debug=no symbols=no` for debug and release build respectively (uses GCC by default)
+- Run `make` or `make debug=no symbols=no` for debug and release build respectively (uses gcc by default)
 - Binary will be placed in `build/flukewm` or you can run using the symlink in the root of the project, `./flukewm`
+- Note: fluke will not run if another window manager is currently active
 
 ### installation
 > todo...
