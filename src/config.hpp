@@ -9,6 +9,6 @@ namespace fluke::constants {
 
 	constexpr uint32_t BORDER_SIZE = 1;
 
-	constexpr bool DEBUG = true;
+	constexpr bool DEBUG = false;
 }
 

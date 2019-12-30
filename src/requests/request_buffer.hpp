@@ -53,12 +53,11 @@ namespace fluke {
 					return std::tuple_cat(get_element<typename Ts::tag_t>(std::move(args.get()))...);
 				}, requests);
 
-
 				// Check how many elements are in the tuple.
 				constexpr auto size = std::tuple_size_v<std::decay_t<decltype(ret)>>;
 
 				if constexpr(size > 1) {
-					return ret;
+					return std::move(ret);
 
 				} else if constexpr(size == 1) {
 					return std::move(std::get<0>(ret));

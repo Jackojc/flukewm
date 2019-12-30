@@ -2,6 +2,7 @@
 #include <chrono>
 #include <thread>
 
+// #define TINGE_PLAIN
 #include <tinge.hpp>
 #include <fluke.hpp>
 
@@ -34,13 +35,14 @@ int main() {
 		);
 
 		constexpr auto events = fluke::make_events(
-			fluke::EventEntry{ XCB_ENTER_NOTIFY,      &fluke::event_handlers::event_enter     },
-			fluke::EventEntry{ XCB_LEAVE_NOTIFY,      &fluke::event_handlers::event_leave     },
-			fluke::EventEntry{ XCB_FOCUS_IN,          &fluke::event_handlers::event_focus_in  },
-			fluke::EventEntry{ XCB_FOCUS_OUT,         &fluke::event_handlers::event_focus_out },
-			fluke::EventEntry{ XCB_CREATE_NOTIFY,     &fluke::event_handlers::event_create    },
-			fluke::EventEntry{ XCB_MAP_REQUEST,       &fluke::event_handlers::event_map       },
-			fluke::EventEntry{ XCB_CONFIGURE_REQUEST, &fluke::event_handlers::event_configure }
+			fluke::EventEntry{ XCB_ENTER_NOTIFY,      &fluke::event_handlers::event_enter_notify      },
+			fluke::EventEntry{ XCB_LEAVE_NOTIFY,      &fluke::event_handlers::event_leave_notify      },
+			fluke::EventEntry{ XCB_FOCUS_IN,          &fluke::event_handlers::event_focus_in          },
+			fluke::EventEntry{ XCB_FOCUS_OUT,         &fluke::event_handlers::event_focus_out         },
+			fluke::EventEntry{ XCB_CREATE_NOTIFY,     &fluke::event_handlers::event_create_notify     },
+			// fluke::EventEntry{ XCB_MAP_NOTIFY,        &fluke::event_handlers::event_map_notify        },
+			fluke::EventEntry{ XCB_MAP_REQUEST,       &fluke::event_handlers::event_map_request       },
+			fluke::EventEntry{ XCB_CONFIGURE_REQUEST, &fluke::event_handlers::event_configure_request }
 		);
 
 
@@ -82,11 +84,15 @@ int main() {
 			try {
 				// handle events (blocking)
 				running = fluke::handle_events(conn, events);
+				// std::this_thread::sleep_for(std::chrono::microseconds{100});
 
 			} catch (const fluke::SetWindowConfigError& e) {
 				tinge::errorln(e.what());
 
 			} catch (const fluke::SetWindowAttributesError& e) {
+				tinge::errorln(e.what());
+
+			} catch (const fluke::GetWindowAttributesError& e) {
 				tinge::errorln(e.what());
 			}
 		}

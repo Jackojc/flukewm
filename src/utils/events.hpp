@@ -4,8 +4,10 @@
 #include <memory>
 #include <array>
 #include <string_view>
+#include <map>
 
 #include <fluke.hpp>
+
 
 namespace fluke {
 	// event types.
@@ -56,9 +58,23 @@ namespace fluke {
 	using GeEvent = std::unique_ptr<xcb_ge_generic_event_t>;
 	using Event = std::unique_ptr<xcb_generic_event_t>;
 
+
+
+	// just a scratch area to store state
+	// enum {
+	// 	EVENT_COUNT,
+	// 	BLACKBOARD_KEYS_TOTAL,
+	// };
+
+	// using Blackboard = std::array<int, BLACKBOARD_KEYS_TOTAL>;
+
+
+
 	using EventCallback = void(*)(fluke::Connection&, fluke::Event&&);
 	using EventEntry = std::pair<int, EventCallback>;
 	using EventArray = std::array<EventCallback, XCB_GE_GENERIC>;
+
+
 }
 
 
