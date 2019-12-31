@@ -11,7 +11,7 @@ extern "C" {
 #include <xcb/xcb_icccm.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xcb_event.h>
-#include <xcb/xcb_errors.h>
+// #include <xcb/xcb_errors.h>
 #include <xcb/xproto.h>
 #include <xcb/randr.h>
 }

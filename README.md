@@ -1,10 +1,4 @@
-```
-  __ _       _
- / _| |_   _| | _______      ___ __ ___
-| |_| | | | | |/ / _ \ \ /\ / | '_ ` _ \
-|  _| | |_| |   |  __/\ V  V /| | | | | |
-|_| |_|\__,_|_|\_\___| \_/\_/ |_| |_| |_|
-```
+<p align=center><img alt="logo" src="logos/fluke_transparent.png" width=30%/></p>
 
 # fluke
 A simple, fast and efficient window manager for X, made with C++ & XCB.

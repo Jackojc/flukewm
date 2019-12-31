@@ -133,12 +133,13 @@ namespace fluke::event_handlers {
 	inline void event_error(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::Error>(std::move(e_));
 
-		xcb_errors_context_t* errors;
-		xcb_errors_context_new(conn, &errors);
+		// xcb_errors_context_t* errors;
+		// xcb_errors_context_new(conn, &errors);
 
-		tinge::errorln("error: ", xcb_errors_get_name_for_error(errors, e->error_code, nullptr));
+		// tinge::errorln("error: ", xcb_errors_get_name_for_error(errors, e->error_code, nullptr));
+		tinge::errorln("error: ", e->error_code);
 
-		xcb_errors_context_free(errors);
+		// xcb_errors_context_free(errors);
 	}
 
 }
