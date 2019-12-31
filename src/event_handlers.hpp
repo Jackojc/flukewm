@@ -18,10 +18,9 @@ namespace fluke::event_handlers {
 
 		// set input focus to new window, set borders and stacking order.
 		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "setting input focus and stacking mode") )
-		fluke::RequestBuffer{
-			fluke::SetInputFocus{conn, XCB_INPUT_FOCUS_POINTER_ROOT, win, XCB_CURRENT_TIME},
-			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_STACK_MODE, fluke::data{XCB_STACK_MODE_ABOVE}}
-		}.get();
+
+		fluke::SetInputFocus{conn, XCB_INPUT_FOCUS_POINTER_ROOT, win, XCB_CURRENT_TIME};
+		fluke::ConfigureWindow{conn, win, XCB_CONFIG_WINDOW_STACK_MODE, fluke::data{XCB_STACK_MODE_ABOVE}};
 	}
 
 
@@ -32,9 +31,7 @@ namespace fluke::event_handlers {
 
 		FLUKE_DEBUG( tinge::successln(fluke::to_hex(win), " LEAVE_NOTIFY") )
 
-		// set input focus, set borders
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "removing input focus") )
-		fluke::SetInputFocus{conn, XCB_INPUT_FOCUS_POINTER_ROOT, conn.root(), XCB_CURRENT_TIME}.get();
+		fluke::SetInputFocus{conn, XCB_INPUT_FOCUS_POINTER_ROOT, conn.root(), XCB_CURRENT_TIME};
 	}
 
 
@@ -45,12 +42,8 @@ namespace fluke::event_handlers {
 
 		FLUKE_DEBUG( tinge::successln(fluke::to_hex(win), " FOCUS_IN") )
 
-		// set borders
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "setting border width and border colour") )
-		fluke::RequestBuffer{
-			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE},
-			fluke::SetWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_ACTIVE}
-		}.get();
+		fluke::ConfigureWindow{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE};
+		fluke::ChangeWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_ACTIVE};
 	}
 
 
@@ -61,12 +54,8 @@ namespace fluke::event_handlers {
 
 		FLUKE_DEBUG( tinge::successln(fluke::to_hex(win), " FOCUS_OUT") )
 
-		// set borders.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "setting border width and border colour") )
-		fluke::RequestBuffer{
-			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE},
-			fluke::SetWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_INACTIVE}
-		}.get();
+		fluke::ConfigureWindow{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE};
+		fluke::ChangeWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_INACTIVE};
 	}
 
 
@@ -83,8 +72,8 @@ namespace fluke::event_handlers {
 			return;
 
 		auto&& [cursor, geom] = fluke::RequestBuffer{
-			fluke::GetPointer{conn, conn.root()},
-			fluke::GetWindowGeometry{conn, win}
+			fluke::QueryPointer{conn, conn.root()},
+			fluke::GetGeometry{conn, win}
 		}.get();
 
 		auto cursor_x = cursor->root_x;
@@ -97,12 +86,8 @@ namespace fluke::event_handlers {
 
 		uint32_t values[] = { x, y, w, h };
 
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "registering events") )
-
-		fluke::RequestBuffer{
-			fluke::SetWindowConfig{conn, win, fluke::XCB_MOVE_RESIZE, values},
-			fluke::SetWindowAttributes{conn, win, XCB_CW_EVENT_MASK, &fluke::XCB_WINDOW_EVENTS}
-		}.get();
+		fluke::ConfigureWindow{conn, win, fluke::XCB_MOVE_RESIZE, values};
+		fluke::ChangeWindowAttributes{conn, win, XCB_CW_EVENT_MASK, &fluke::XCB_WINDOW_EVENTS};
 	}
 
 
@@ -116,14 +101,10 @@ namespace fluke::event_handlers {
 		if (fluke::GetWindowAttributes{conn, win}.get()->override_redirect)
 			return;
 
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "mapping window") )
-
-		fluke::RequestBuffer{
-			fluke::SetWindowMapped{conn, win},
-			fluke::SetWindowConfig{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE},
-			fluke::SetWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_ACTIVE},
-			fluke::SetInputFocus{conn, XCB_INPUT_FOCUS_POINTER_ROOT, win, XCB_CURRENT_TIME}
-		}.get();
+		fluke::MapWindow{conn, win};
+		fluke::ConfigureWindow{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE};
+		fluke::ChangeWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_ACTIVE};
+		fluke::SetInputFocus{conn, XCB_INPUT_FOCUS_POINTER_ROOT, win, XCB_CURRENT_TIME};
 	}
 
 
@@ -145,7 +126,7 @@ namespace fluke::event_handlers {
 		if (mask & XCB_CONFIG_WINDOW_HEIGHT)     values[i++] = e->height;
 		if (mask & XCB_CONFIG_WINDOW_STACK_MODE) values[i++] = e->stack_mode;
 
-		fluke::SetWindowConfig{conn, win, mask, values.data()}.get();
+		fluke::ConfigureWindow{conn, win, mask, values.data()};
 	}
 }
 

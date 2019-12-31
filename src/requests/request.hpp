@@ -22,24 +22,8 @@ namespace fluke {
 		fluke::Connection conn;
 		C cookie;
 
-		constexpr Request(const fluke::Connection& conn_, C cookie_)
+		Request(const fluke::Connection& conn_, C cookie_)
 			: conn(conn_), cookie(cookie_) {}
-
-		constexpr Request() {}
-
-		constexpr Request(const Request<T, C, T, Err>& other) {
-			conn = other.conn;
-			cookie = other.cookie;
-		}
-
-		constexpr Request<T, C, T, Err>& operator=(const Request<T, C, T, Err>& other) {
-			if (this != &other) {
-				conn = other.conn;
-				cookie = other.cookie;
-			}
-
-			return *this;
-		}
 
 		template <typename F>
 		auto get(F func) const {
@@ -47,11 +31,7 @@ namespace fluke {
 				if (auto ret = reply_t{func(conn, cookie, nullptr), std::free})
 					return ret;
 
-			} else if constexpr(std::is_same_v<tag_t, detail::SetterTag>) {
-				if (auto ret = reply_t{func(conn, cookie), std::free}; not ret)
-					return ret;
-
-			} else {
+			} else if constexpr(not std::is_same_v<tag_t, detail::SetterTag>) {
 				throw fluke::UnknownTagError();
 			}
 
@@ -73,38 +53,37 @@ namespace fluke {
 	#define SET_REQUEST(name, type) \
 		struct name: Request<detail::SetterTag, xcb_void_cookie_t, xcb_generic_error_t, fluke::name##Error> { \
 			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
-				Request::Request(conn_, xcb_##type##_checked(conn_, std::forward<Ts>(args)...)) {} \
-			constexpr name(): \
-				Request::Request() {} \
-			using Request::operator=; \
-			auto get() const { return Request::get(xcb_request_check); } \
+				Request::Request(conn_, xcb_##type(conn_, std::forward<Ts>(args)...)) {} \
 		};
 
 
 	// Getters
-	GET_REQUEST(GetInternAtom,         intern_atom)
+	GET_REQUEST(InternAtom,            intern_atom)
 	GET_REQUEST(GetWindowAttributes,   get_window_attributes)
-	GET_REQUEST(GetWindowGeometry,     get_geometry)
-	GET_REQUEST(GetWindowProperty,     get_property)
+	GET_REQUEST(GetGeometry,           get_geometry)
+	GET_REQUEST(GetProperty,           get_property)
 	GET_REQUEST(GetInputFocus,         get_input_focus)
-	GET_REQUEST(GetTree,               query_tree)
-	GET_REQUEST(GetPointer,            query_pointer)
-	GET_REQUEST(GetRandrProviders,     randr_get_providers)
-	GET_REQUEST(GetRandrProviderInfo,  randr_get_provider_info)
-	GET_REQUEST(GetRandrOutputInfo,    randr_get_output_info)
-	GET_REQUEST(GetRandrCrtcInfo,      randr_get_crtc_info)
-	GET_REQUEST(GetRandrOutputPrimary, randr_get_output_primary)
+	GET_REQUEST(QueryTree,             query_tree)
+	GET_REQUEST(QueryPointer,          query_pointer)
+	GET_REQUEST(RandrGetProviders,     randr_get_providers)
+	GET_REQUEST(RandrGetProviderInfo,  randr_get_provider_info)
+	GET_REQUEST(RandrGetOutputInfo,    randr_get_output_info)
+	GET_REQUEST(RandrGetCrtcInfo,      randr_get_crtc_info)
+	GET_REQUEST(RandrGetOutputPrimary, randr_get_output_primary)
 
 
 	// Setters
-	SET_REQUEST(SetWindowConfig,     configure_window)
-	SET_REQUEST(SetWindowAttributes, change_window_attributes)
-	SET_REQUEST(SetInputFocus,       set_input_focus)
-	SET_REQUEST(SetWindowMapped,     map_window)
-	SET_REQUEST(SetWindowUnmapped,   unmap_window)
+	SET_REQUEST(ConfigureWindow,        configure_window)
+	SET_REQUEST(ChangeWindowAttributes, change_window_attributes)
+	SET_REQUEST(SetInputFocus,          set_input_focus)
+	SET_REQUEST(MapWindow,              map_window)
+	SET_REQUEST(UnmapWindow,            unmap_window)
+
+
 
 
 	#undef GET_REQUEST
 	#undef SET_REQUEST
 
 }
+

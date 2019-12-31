@@ -9,28 +9,41 @@ namespace fluke {
 	#define FLUKE_DEBUG(x) if constexpr(constants::DEBUG) { x; }
 
 
+	// Fire off a bunch of requests then get the reply to all of them.
+	template <typename T, typename F, typename... Ts>
+	auto dispatch_consume(F func, const std::vector<T>& changing_arg, Ts&&... args) {
+		std::vector<decltype(func(changing_arg.at(0), std::forward<Ts>(args)...))> request;
+		std::vector<decltype(request.front().get())> reply;
 
+		for (auto x: changing_arg)
+			request.emplace_back(func(x, std::forward<Ts>(args)...));
+
+		for (auto x: request)
+			reply.emplace_back(x.get());
+
+		return reply;
+	}
 
 
 	auto get_all_windows(fluke::Connection& conn) {
 		FLUKE_DEBUG( tinge::warnln("get_all_windows") )
 
 		// Get all windows.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "getting window ids") )
+		auto tree = fluke::QueryTree{conn, conn.root()}.get();
 
-		auto tree = fluke::GetTree{conn, conn.root()}.get();
 		std::vector<xcb_window_t> windows{
 			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
 			xcb_query_tree_children(tree.get()) + xcb_query_tree_children_length(tree.get())
 		};
 
+
 		// Get window attributes.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "getting window attributes") )
-		auto attrs = fluke::RequestContainer<fluke::GetWindowAttributes>{conn, windows}.get();
+		auto attrs = fluke::dispatch_consume([] (auto&& win, auto&&... args) {
+			return fluke::GetWindowAttributes{ args..., win };
+		}, windows, conn);
+
 
 		// Ignore windows which have override_redirect set.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "removing ignored windows") )
-
 		decltype(attrs)::size_type i = 0;
 		windows.erase(std::remove_if(windows.begin(), windows.end(), [&] (xcb_window_t) {
 			return attrs[i++]->override_redirect;
@@ -40,29 +53,25 @@ namespace fluke {
 	}
 
 
-
-
-
-
 	auto get_mapped_windows(fluke::Connection& conn) {
 		FLUKE_DEBUG( tinge::warnln("get_mapped_windows") )
 
 		// Get all windows.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "getting window ids") )
+		auto tree = fluke::QueryTree{conn, conn.root()}.get();
 
-		auto tree = fluke::GetTree{conn, conn.root()}.get();
 		std::vector<xcb_window_t> windows{
 			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
 			xcb_query_tree_children(tree.get()) + xcb_query_tree_children_length(tree.get())
 		};
 
+
 		// Get window attributes.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "getting window attributes") )
-		auto attrs = fluke::RequestContainer<fluke::GetWindowAttributes>{conn, windows}.get();
+		auto attrs = fluke::dispatch_consume([] (auto&& win, auto&&... args) {
+			return fluke::GetWindowAttributes{ args..., win };
+		}, windows, conn);
+
 
 		// Ignore windows which have override_redirect set.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "removing ignored windows") )
-
 		decltype(attrs)::size_type i = 0;
 		windows.erase(std::remove_if(windows.begin(), windows.end(), [&] (xcb_window_t) {
 			bool flag = not attrs.at(i)->override_redirect and attrs.at(i)->map_state == XCB_MAP_STATE_VIEWABLE;
@@ -75,61 +84,25 @@ namespace fluke {
 
 
 
-
-
-
 	void adopt_orphaned_windows(fluke::Connection& conn) {
-		auto windows = fluke::get_mapped_windows(conn);
-
-		if (windows.size() == 0)
-			return;
-
 		FLUKE_DEBUG( tinge::warnln("adopt_orphaned_windows") )
 
-
-		// register events on windows.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "registering events on windows") )
-		fluke::RequestContainer<fluke::SetWindowAttributes> request_events{
-			conn, windows, XCB_CW_EVENT_MASK, &fluke::XCB_WINDOW_EVENTS
-		};
-
-
-		// Set border width.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "setting window border sizes") )
-		fluke::RequestContainer<fluke::SetWindowConfig> request_borders{
-			conn, windows, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE
-		};
-
-
-		// Set border colour.
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "setting window border colours") )
-		fluke::RequestContainer<fluke::SetWindowAttributes> request_colours{
-			conn, windows, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_INACTIVE
-		};
-
-
-		// commit changes
-		fluke::get(request_events, request_colours, request_borders);
-
+		// register events and set border width & colour.
+		for (auto&& win: fluke::get_mapped_windows(conn)) {
+			fluke::ChangeWindowAttributes{conn, win, XCB_CW_EVENT_MASK, &fluke::XCB_WINDOW_EVENTS};
+			fluke::ChangeWindowAttributes{conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, &constants::BORDER_SIZE};
+			fluke::ChangeWindowAttributes{conn, win, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_INACTIVE};
+		}
 
 		// get currently focused window
-		FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "getting focused window") )
 		xcb_window_t focused = fluke::GetInputFocus{conn}.get()->focus; // get currently focused window
 
-		// if (focused != conn.root()) {
-		// 	// highlight currently focused window and set stacking order.
-		// 	FLUKE_DEBUG( tinge::noticeln(tinge::before{"\t"}, "setting border and stacking mode for focused window") )
+		const uint32_t values[] = { constants::BORDER_SIZE, XCB_STACK_MODE_ABOVE };
 
-		// 	uint32_t values[] = { constants::BORDER_SIZE, XCB_STACK_MODE_ABOVE };
-		// 	fluke::RequestBuffer{
-		// 		fluke::SetWindowConfig{
-		// 			conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, values
-		// 		},
-		// 		fluke::SetWindowAttributes{
-		// 			conn, focused, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_ACTIVE
-		// 		}
-		// 	}.get();
-		// }
+		if (focused != conn.root()) {
+			fluke::ConfigureWindow{conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, values};
+			fluke::ChangeWindowAttributes{conn, focused, XCB_CW_BORDER_PIXEL, &constants::BORDER_COLOUR_ACTIVE};
+		}
 	}
 
 }

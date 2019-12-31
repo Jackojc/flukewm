@@ -28,7 +28,7 @@ namespace fluke {
 			constexpr static auto get_element(T&& arg) {
 				// If it's a getter, return tuple.
 				if constexpr(std::is_same_v<Tag, detail::GetterTag>)
-					return std::tuple{ std::forward<T>(arg) };
+					return std::tuple{ arg.get() };
 
 				// If it's a setter, return empty tuple.
 				if constexpr(std::is_same_v<Tag, detail::SetterTag>)
@@ -50,7 +50,7 @@ namespace fluke {
 			constexpr auto get() const && {
 				// Return a tuple of elements with the GetterTag
 				auto&& ret = std::apply([] (Ts... args) {
-					return std::tuple_cat(get_element<typename Ts::tag_t>(std::move(args.get()))...);
+					return std::tuple_cat(get_element<typename Ts::tag_t>(args)...);
 				}, requests);
 
 				// Check how many elements are in the tuple.

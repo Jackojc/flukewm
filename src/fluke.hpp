@@ -8,7 +8,6 @@
 
 #include <requests/request.hpp>
 #include <requests/request_buffer.hpp>
-#include <requests/request_container.hpp>
 
 #include <utils/zip.hpp>
 #include <utils/exec.hpp>
