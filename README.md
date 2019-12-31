@@ -57,12 +57,15 @@ I wanted a very minimal window manager that suited my workflow, had good hotplug
 This project uses the GPLv2 license. (check [LICENSE.md](LICENSE.md))
 
 ### acknowledgements
-This project was inspired and helped by the source code of the following projects:
-- [bspwm](https://github.com/baskerville/bspwm)
-- [wmutils](https://github.com/wmutils/core)
-- [disputils](https://github.com/tudurom/disputils)
-- [windowchef](https://github.com/tudurom/windowchef)
+- Thanks to [@noxabellus](https://github.com/noxabellus) for the great logo!
+
+- This project was inspired and helped by the source code of the following projects:
+	- [bspwm](https://github.com/baskerville/bspwm)
+	- [wmutils](https://github.com/wmutils/core)
+	- [disputils](https://github.com/tudurom/disputils)
+	- [windowchef](https://github.com/tudurom/windowchef)
 
 ### progress & discussion
 You can join the discord server in order to follow progress and/or contribute to discussion of the project. (https://discord.gg/RmgjcES)
+
 
