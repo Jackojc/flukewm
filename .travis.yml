@@ -7,28 +7,28 @@ script:
 
 matrix:
   include:
-    - os: linux
-      language: cpp
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - sourceline: 'ppa:ubuntu-toolchain-r/test'
-          packages:
-            - gcc-9
-            - g++-9
-            - xcb
-            - xcb-proto
-            - libx11-dev
-            - libx11-xcb-dev
-            - libxcb1-dev
-            - libxcb-util-dev
-            - libxcb-icccm4-dev
-            - libxcb-randr0-dev
-            - libxcb-keysyms1-dev
+    # - os: linux
+    #   language: cpp
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - sourceline: 'ppa:ubuntu-toolchain-r/test'
+    #       packages:
+    #         - gcc-9
+    #         - g++-9
+    #         - xcb
+    #         - xcb-proto
+    #         - libx11-dev
+    #         - libx11-xcb-dev
+    #         - libxcb1-dev
+    #         - libxcb-util-dev
+    #         - libxcb-icccm4-dev
+    #         - libxcb-randr0-dev
+    #         - libxcb-keysyms1-dev
 
-      env:
-        - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
+    #   env:
+    #     - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
 
     - os: linux
       language: cpp
