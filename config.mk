@@ -7,7 +7,7 @@ TARGET=flukewm
 
 # Include & Link
 INCS=-I. -Isrc/ -Imodules/tinge/
-LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
+LIBS=-lxcb -lxcb-util -lxcb-errors -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
 
 
 # Options

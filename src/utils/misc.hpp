@@ -11,15 +11,15 @@ namespace fluke {
 
 	// Fire off a bunch of requests then get the reply to all of them.
 	template <typename T, typename F, typename... Ts>
-	auto dispatch_consume(F func, const std::vector<T>& changing_arg, Ts&&... args) {
+	auto dispatch_consume(fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args) {
 		std::vector<decltype(func(changing_arg.at(0), std::forward<Ts>(args)...))> request;
-		std::vector<decltype(request.front().get())> reply;
+		std::vector<decltype(request.front().get(conn))> reply;
 
 		for (auto x: changing_arg)
 			request.emplace_back(func(x, std::forward<Ts>(args)...));
 
 		for (auto x: request)
-			reply.emplace_back(x.get());
+			reply.emplace_back(x.get(conn));
 
 		return reply;
 	}
@@ -29,7 +29,7 @@ namespace fluke {
 		FLUKE_DEBUG( tinge::warnln("get_all_windows") )
 
 		// Get all windows.
-		auto tree = fluke::QueryTree{conn, conn.root()}.get();
+		auto tree = fluke::QueryTree{conn, conn.root()}.get(conn);
 
 		std::vector<xcb_window_t> windows{
 			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
@@ -38,7 +38,7 @@ namespace fluke {
 
 
 		// Get window attributes.
-		auto attrs = fluke::dispatch_consume([] (auto&& win, auto&&... args) {
+		auto attrs = fluke::dispatch_consume(conn, [] (auto&& win, auto&&... args) {
 			return fluke::GetWindowAttributes{ args..., win };
 		}, windows, conn);
 
@@ -57,7 +57,7 @@ namespace fluke {
 		FLUKE_DEBUG( tinge::warnln("get_mapped_windows") )
 
 		// Get all windows.
-		auto tree = fluke::QueryTree{conn, conn.root()}.get();
+		auto tree = fluke::QueryTree{conn, conn.root()}.get(conn);
 
 		std::vector<xcb_window_t> windows{
 			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
@@ -66,7 +66,7 @@ namespace fluke {
 
 
 		// Get window attributes.
-		auto attrs = fluke::dispatch_consume([] (auto&& win, auto&&... args) {
+		auto attrs = fluke::dispatch_consume(conn, [] (auto&& win, auto&&... args) {
 			return fluke::GetWindowAttributes{ args..., win };
 		}, windows, conn);
 
@@ -95,7 +95,7 @@ namespace fluke {
 		}
 
 		// get currently focused window
-		xcb_window_t focused = fluke::GetInputFocus{conn}.get()->focus; // get currently focused window
+		xcb_window_t focused = fluke::GetInputFocus{conn}.get(conn)->focus; // get currently focused window
 
 		const uint32_t values[] = { constants::BORDER_SIZE, XCB_STACK_MODE_ABOVE };
 

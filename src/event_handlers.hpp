@@ -68,13 +68,13 @@ namespace fluke::event_handlers {
 
 		FLUKE_DEBUG( tinge::successln(fluke::to_hex(win), " CREATE_NOTIFY") )
 
-		if (fluke::GetWindowAttributes{conn, win}.get()->override_redirect)
+		if (fluke::GetWindowAttributes{conn, win}.get(conn)->override_redirect)
 			return;
 
 		auto&& [cursor, geom] = fluke::RequestBuffer{
 			fluke::QueryPointer{conn, conn.root()},
 			fluke::GetGeometry{conn, win}
-		}.get();
+		}.get(conn);
 
 		auto cursor_x = cursor->root_x;
 		auto cursor_y = cursor->root_y;
@@ -98,7 +98,7 @@ namespace fluke::event_handlers {
 
 		FLUKE_DEBUG( tinge::successln(fluke::to_hex(win), " MAP_REQUEST") )
 
-		if (fluke::GetWindowAttributes{conn, win}.get()->override_redirect)
+		if (fluke::GetWindowAttributes{conn, win}.get(conn)->override_redirect)
 			return;
 
 		fluke::MapWindow{conn, win};
@@ -128,5 +128,18 @@ namespace fluke::event_handlers {
 
 		fluke::ConfigureWindow{conn, win, mask, values.data()};
 	}
+
+
+	inline void event_error(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::Error>(std::move(e_));
+
+		xcb_errors_context_t* errors;
+		xcb_errors_context_new(conn, &errors);
+
+		tinge::errorln("error: ", xcb_errors_get_name_for_error(errors, e->error_code, nullptr));
+
+		xcb_errors_context_free(errors);
+	}
+
 }
 

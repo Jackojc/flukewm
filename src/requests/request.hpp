@@ -3,15 +3,17 @@
 #include <type_traits>
 #include <memory>
 #include <utility>
-
 #include <cstdlib>
-
 #include <fluke.hpp>
+
+
 
 namespace fluke::detail {
 	struct GetterTag { };
 	struct SetterTag { };
 }
+
+
 
 namespace fluke {
 	template <typename T, typename C, typename R, typename Err>
@@ -19,14 +21,19 @@ namespace fluke {
 		using reply_t = std::unique_ptr<R, decltype(&std::free)>;
 		using tag_t   = T;
 
-		fluke::Connection conn;
+
+		// fluke::Connection conn;
 		C cookie;
 
-		Request(const fluke::Connection& conn_, C cookie_)
-			: conn(conn_), cookie(cookie_) {}
+
+		// Request(const fluke::Connection& conn_, C cookie_)
+		// 	: conn(conn_), cookie(cookie_) {}
+
+		Request(C cookie_): cookie(cookie_) {}
+
 
 		template <typename F>
-		auto get(F func) const {
+		auto get(fluke::Connection& conn, F func) const {
 			if constexpr(std::is_same_v<tag_t, detail::GetterTag>) {
 				if (auto ret = reply_t{func(conn, cookie, nullptr), std::free})
 					return ret;
@@ -43,17 +50,17 @@ namespace fluke {
 	// Define a get request, nothing special.
 	#define GET_REQUEST(name, type) \
 		struct name: Request<detail::GetterTag, xcb_##type##_cookie_t, xcb_##type##_reply_t, fluke::name##Error> { \
-			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
-				Request::Request(conn_, xcb_##type(conn_, std::forward<Ts>(args)...)) {} \
-			auto get() const { return Request::get(xcb_##type##_reply); } \
+			template <typename... Ts> constexpr name(const fluke::Connection& conn, Ts&&... args): \
+				Request::Request(xcb_##type(conn, std::forward<Ts>(args)...)) {} \
+			auto get(fluke::Connection& conn) const { return Request::get(conn, xcb_##type##_reply); } \
 		};
 
 
 	// Define a set request, uses the same cookie and reply function for all setters.
 	#define SET_REQUEST(name, type) \
 		struct name: Request<detail::SetterTag, xcb_void_cookie_t, xcb_generic_error_t, fluke::name##Error> { \
-			template <typename... Ts> constexpr name(const fluke::Connection& conn_, Ts&&... args): \
-				Request::Request(conn_, xcb_##type(conn_, std::forward<Ts>(args)...)) {} \
+			template <typename... Ts> constexpr name(const fluke::Connection& conn, Ts&&... args): \
+				Request::Request(xcb_##type(conn, std::forward<Ts>(args)...)) {} \
 		};
 
 

@@ -58,6 +58,7 @@ namespace fluke {
 	using GeEvent = std::unique_ptr<xcb_ge_generic_event_t>;
 	using Event = std::unique_ptr<xcb_generic_event_t>;
 
+	using Error = std::unique_ptr<xcb_generic_error_t>;
 
 
 	// just a scratch area to store state
