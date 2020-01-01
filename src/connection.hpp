@@ -32,21 +32,6 @@ namespace fluke {
 					throw fluke::ScreenError();
 			}
 
-			// Connection(Connection&& other): conn(nullptr, &detail::cleanup_connection) {
-			// 	conn.reset(std::move(other.conn));
-			// 	screen = other.screen;
-			// }
-
-
-			// Connection& operator=(Connection&& other) {
-			// 	if (this != &other) {
-			// 		conn = std::move(other.conn);
-			// 		screen = other.screen;
-			// 	}
-
-			// 	return *this;
-			// }
-
 
 		// Implicit cast operators
 		public:

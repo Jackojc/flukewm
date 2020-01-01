@@ -5,9 +5,7 @@
 #include <config.hpp>
 
 #include <connection.hpp>
-
-#include <requests/request.hpp>
-#include <requests/request_buffer.hpp>
+#include <request.hpp>
 
 #include <utils/zip.hpp>
 #include <utils/exec.hpp>

@@ -18,7 +18,7 @@ int main() {
 
 		try {
 			// register to receive window manager events. only one window manager can be active at one time.
-			fluke::ChangeWindowAttributes{conn, conn.root(), XCB_CW_EVENT_MASK, &fluke::XCB_WINDOWMANAGER_EVENTS};
+			fluke::change_window_attributes(conn, conn.root(), XCB_CW_EVENT_MASK, fluke::XCB_WINDOWMANAGER_EVENTS);
 
 		} catch (const fluke::ChangeWindowAttributesError& e) {
 			tinge::errorln("another window manager is already running!");
