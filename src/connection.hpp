@@ -16,31 +16,31 @@ namespace fluke {
 		// Data
 		private:
 			std::unique_ptr<xcb_connection_t, decltype(&detail::cleanup_connection)> conn;
-			xcb_screen_t* screen;
+			xcb_screen_t* scrn;
 
 
 		// Constructor
 		public:
 			Connection():
 				conn(xcb_connect(nullptr, nullptr), &detail::cleanup_connection),
-				screen(xcb_setup_roots_iterator(xcb_get_setup(conn.get())).data)
+				scrn(xcb_setup_roots_iterator(xcb_get_setup(conn.get())).data)
 			{
 				if (xcb_connection_has_error(conn.get()))
 					throw fluke::ConnectionError();
 
-				if (not screen)
+				if (not scrn)
 					throw fluke::ScreenError();
 			}
 
 
 		// Implicit cast operators
 		public:
-			operator xcb_connection_t* () const {
+			operator xcb_connection_t*() const {
 				return conn.get();
 			}
 
-			operator xcb_screen_t* () const {
-				return screen;
+			operator xcb_screen_t*() const {
+				return scrn;
 			}
 
 
@@ -51,7 +51,11 @@ namespace fluke {
 			}
 
 			constexpr xcb_window_t root() const {
-				return screen->root;
+				return scrn->root;
+			}
+
+			constexpr xcb_screen_t* screen() const {
+				return scrn;
 			}
 
 			// Flush all pending requests.

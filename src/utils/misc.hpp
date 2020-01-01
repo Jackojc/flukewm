@@ -6,7 +6,21 @@
 #include <fluke.hpp>
 
 namespace fluke {
-	#define FLUKE_DEBUG(x) if constexpr(constants::DEBUG) { x; }
+	#ifdef NDEBUG
+		#define FLUKE_DEBUG(x) { }
+	#else
+		#define FLUKE_DEBUG(x) { x; }
+	#endif
+
+
+
+	template <typename T>
+	std::string to_hex(T&& arg) {
+		std::stringstream ss;
+		ss << "0x" << std::hex << arg;
+		return ss.str();
+	}
+
 
 
 	// Fire off a bunch of requests then get the reply to all of them.
@@ -26,8 +40,6 @@ namespace fluke {
 
 
 	auto get_all_windows(fluke::Connection& conn) {
-		FLUKE_DEBUG( tinge::warnln("get_all_windows") )
-
 		// Get all windows.
 		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
 
@@ -54,8 +66,6 @@ namespace fluke {
 
 
 	auto get_mapped_windows(fluke::Connection& conn) {
-		FLUKE_DEBUG( tinge::warnln("get_mapped_windows") )
-
 		// Get all windows.
 		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
 
@@ -85,8 +95,6 @@ namespace fluke {
 
 
 	void adopt_orphaned_windows(fluke::Connection& conn) {
-		FLUKE_DEBUG( tinge::warnln("adopt_orphaned_windows") )
-
 		// register events and set border width & colour.
 		for (auto&& win: fluke::get_mapped_windows(conn)) {
 			fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);

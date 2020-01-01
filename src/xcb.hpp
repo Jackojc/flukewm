@@ -11,7 +11,6 @@ extern "C" {
 #include <xcb/xcb_icccm.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xcb_event.h>
-// #include <xcb/xcb_errors.h>
 #include <xcb/xproto.h>
 #include <xcb/randr.h>
 }
@@ -48,46 +47,4 @@ namespace fluke {
 		XCB_EVENT_MASK_FOCUS_CHANGE |
 		XCB_EVENT_MASK_STRUCTURE_NOTIFY
 	;
-
-
-	// kind of a hack to allow passing rvalue addresses
-	// void func(uint32_t*);
-	// func(data{ a | b });
-	struct data {
-		uint32_t data;
-
-		operator uint32_t*() {
-			return &data;
-		}
-	};
-
-
-
-	// template <typename... Ts>
-	// struct values {
-	// 	std::array<uint32_t, sizeof...(Ts)> data;
-
-	// 	constexpr values(Ts&&... args):
-	// 		data{ std::forward<Ts>(args)... }
-	// 	{
-
-	// 	}
-
-	// 	operator uint32_t*() {
-	// 		return data.data();
-	// 	}
-	// };
-
-
-	// std::ostream& operator<<(std::ostream& os, xcb_window_t win) {
-	// 	return (os << "0x" << std::hex << win);
-	// }
-
-	template <typename T>
-	std::string to_hex(T&& arg) {
-		std::stringstream ss;
-		ss << "0x" << std::hex << arg;
-		return ss.str();
-	}
-
 }

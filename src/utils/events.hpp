@@ -61,21 +61,9 @@ namespace fluke {
 	using Error = std::unique_ptr<xcb_generic_error_t>;
 
 
-	// just a scratch area to store state
-	// enum {
-	// 	EVENT_COUNT,
-	// 	BLACKBOARD_KEYS_TOTAL,
-	// };
-
-	// using Blackboard = std::array<int, BLACKBOARD_KEYS_TOTAL>;
-
-
-
 	using EventCallback = void(*)(fluke::Connection&, fluke::Event&&);
 	using EventEntry = std::pair<int, EventCallback>;
 	using EventArray = std::array<EventCallback, XCB_GE_GENERIC>;
-
-
 }
 
 
@@ -102,7 +90,7 @@ namespace fluke {
 
 	namespace detail {
 		void default_callback(fluke::Connection&, fluke::Event&& e) {
-			constexpr static auto event_names = make_event_names(
+			constexpr auto event_names = make_event_names(
 				std::pair{ 0,                     "EVENT_ERROR"       },
 				std::pair{ XCB_CREATE_NOTIFY,     "CREATE_NOTIFY"     },
 				std::pair{ XCB_DESTROY_NOTIFY,    "DESTROY_NOTIFY"    },
@@ -136,7 +124,7 @@ namespace fluke {
 				std::pair{ XCB_MAPPING_NOTIFY,    "MAPPING_NOTIFY"    }
 			);
 
-			tinge::warnln("unhandled event '", event_names[XCB_EVENT_RESPONSE_TYPE(e.get())], "'!");
+			FLUKE_DEBUG( tinge::warnln("unhandled event '", tinge::fg::bright::yellow, event_names[XCB_EVENT_RESPONSE_TYPE(e.get())], tinge::reset, "'!") )
 		};
 	}
 

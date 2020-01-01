@@ -12,7 +12,7 @@ LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
 
 # Options
 PROGRAM_CPPFLAGS=$(CPPFLAGS)
-PROGRAM_LDFLAGS=-s $(LIBS) $(LDFLAGS)
+PROGRAM_LDFLAGS=$(LIBS) $(LDFLAGS)
 
 PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow -Wundef -Wno-unused $(CXXWARN)
 
@@ -38,9 +38,12 @@ endif
 
 # Debugging Symbols
 ifeq ($(symbols),yes)
-	PROGRAM_CXXFLAGS += -g
+	PROGRAM_CXXFLAGS+=-g
 
-else ifneq ($(symbols),no)
+else ifeq ($(symbols),no)
+	PROGRAM_CXXFLAGS+=-s
+
+else
 $(error symbols should be either yes or no)
 endif
 

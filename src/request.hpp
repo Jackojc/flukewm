@@ -139,29 +139,33 @@ namespace fluke {
 	}
 
 
-	// RandrGetProvidersCookie randr_get_providers(fluke::Connection& conn, ) {
-	// 	return xcb__unchecked(conn, );
-	// }
 
 
-	// RandrGetProviderInfoCookie randr_get_provider_info(fluke::Connection& conn, ) {
-	// 	return xcb__unchecked(conn, );
-	// }
 
 
-	// RandrGetOutputInfoCookie randr_get_output_info(fluke::Connection& conn, ) {
-	// 	return xcb__unchecked(conn, );
-	// }
+	RandrGetProvidersCookie randr_get_providers(fluke::Connection& conn, xcb_window_t win) {
+		return xcb_randr_get_providers_unchecked(conn, win);
+	}
 
 
-	// RandrGetCrtcInfoCookie randr_get_crtc_info(fluke::Connection& conn, ) {
-	// 	return xcb__unchecked(conn, );
-	// }
+	RandrGetProviderInfoCookie randr_get_provider_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
+		return xcb_randr_get_provider_info_unchecked(conn, provider, XCB_CURRENT_TIME);
+	}
 
 
-	// RandrGetOutputPrimaryCookie randr_get_output_primary(fluke::Connection& conn, ) {
-	// 	return xcb__unchecked(conn, );
-	// }
+	RandrGetOutputInfoCookie randr_get_output_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
+		return xcb_randr_get_output_info_unchecked(conn, provider, XCB_CURRENT_TIME);
+	}
+
+
+	RandrGetCrtcInfoCookie randr_get_crtc_info(fluke::Connection& conn, xcb_randr_crtc_t crtc) {
+		return xcb_randr_get_crtc_info_unchecked(conn, crtc, XCB_CURRENT_TIME);
+	}
+
+
+	RandrGetOutputPrimaryCookie randr_get_output_primary(fluke::Connection& conn, xcb_window_t win) {
+		return xcb_randr_get_output_primary_unchecked(conn, win);
+	}
 
 
 

@@ -1,6 +1,10 @@
 #pragma once
 
+// #define TINGE_PLAIN
+#include <tinge.hpp>
+
 #include <xcb.hpp>
+#include <xcb_errors.hpp>
 #include <exception.hpp>
 #include <config.hpp>
 

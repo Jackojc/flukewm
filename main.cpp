@@ -2,8 +2,6 @@
 #include <chrono>
 #include <thread>
 
-// #define TINGE_PLAIN
-#include <tinge.hpp>
 #include <fluke.hpp>
 
 
