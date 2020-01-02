@@ -1,114 +1,102 @@
 #include <iostream>
-#include <chrono>
-#include <thread>
-
+#include <array>
 #include <fluke.hpp>
 
 
-void test(fluke::Connection&) {
-	tinge::successln("hello from hook1");
-}
-
-
 int main() {
-	try {
-		fluke::Connection conn;
+	fluke::Connection conn;
 
-		try {
-			// register to receive window manager events. only one window manager can be active at one time.
-			fluke::change_window_attributes(conn, conn.root(), XCB_CW_EVENT_MASK, fluke::XCB_WINDOWMANAGER_EVENTS);
+	// register to receive window manager events. only one window manager can be active at one time.
+	fluke::change_window_attributes(conn, conn.root(), XCB_CW_EVENT_MASK, fluke::XCB_WINDOWMANAGER_EVENTS);
 
-		} catch (const fluke::ChangeWindowAttributesError& e) {
-			tinge::errorln("another window manager is already running!");
-			return 4;
-		}
+	// adopt any windows which were open at the time of fluke's launch.
+	fluke::adopt_orphans(conn);
 
-		// adopt any windows which were open at the time of fluke's launch.
-		fluke::adopt_orphaned_windows(conn);
 
-		// custom user hooks
-		constexpr auto hooks = fluke::make_hooks(
-			// fluke::HookEntry{ 1000, &test }
-		);
-
-		constexpr auto events = fluke::make_events(
-			fluke::EventEntry{ 0,                     &fluke::event_handlers::event_error             },
-			fluke::EventEntry{ XCB_ENTER_NOTIFY,      &fluke::event_handlers::event_enter_notify      },
-			fluke::EventEntry{ XCB_LEAVE_NOTIFY,      &fluke::event_handlers::event_leave_notify      },
-			fluke::EventEntry{ XCB_FOCUS_IN,          &fluke::event_handlers::event_focus_in          },
-			fluke::EventEntry{ XCB_FOCUS_OUT,         &fluke::event_handlers::event_focus_out         },
-			fluke::EventEntry{ XCB_CREATE_NOTIFY,     &fluke::event_handlers::event_create_notify     },
-			fluke::EventEntry{ XCB_MAP_REQUEST,       &fluke::event_handlers::event_map_request       },
-			fluke::EventEntry{ XCB_CONFIGURE_REQUEST, &fluke::event_handlers::event_configure_request }
-		);
+	// define event handlers, (event_id, handler_name)
+	#define EVENT_HANDLERS \
+		NEW_HANDLER( 0,                     error             ) \
+		NEW_HANDLER( XCB_ENTER_NOTIFY,      enter_notify      ) \
+		NEW_HANDLER( XCB_LEAVE_NOTIFY,      leave_notify      ) \
+		NEW_HANDLER( XCB_FOCUS_IN,          focus_in          ) \
+		NEW_HANDLER( XCB_FOCUS_OUT,         focus_out         ) \
+		NEW_HANDLER( XCB_CREATE_NOTIFY,     create_notify     ) \
+		NEW_HANDLER( XCB_MAP_REQUEST,       map_request       ) \
+		NEW_HANDLER( XCB_CONFIGURE_REQUEST, configure_request )
 
 
 
-		bool running = true;
+	// generates a compile time lookup table of labels
+	constexpr auto generate_table = [] (const auto& init, const auto& args) {
+		using arr_t = std::array<void*, XCB_NO_OPERATION>;
+		arr_t labels{};
 
+		for (auto& x: labels)
+			x = init;
 
-		// run hooks on seperate thread
-		std::thread hook_thread;
+		for (auto [id, label]: args)
+			labels[static_cast<arr_t::size_type>(id)] = label;
 
-		if constexpr(hooks.size() > 0) {
-			hook_thread = std::thread([&hooks, &running] () {
-				fluke::Connection hook_conn;
-
-				// find smallest delay and use that for sleep timer.
-				int delay = 99999;
-				for (auto&& [ms, func]: hooks) {
-					if (ms < delay)
-						delay = ms;
-				}
-
-				int current_ms = 0;
-
-				while (running) {
-					// handle user defined hooks.
-					fluke::handle_hooks(hook_conn, hooks, current_ms);
-					std::this_thread::sleep_for(std::chrono::milliseconds{delay});
-					current_ms += delay;
-				}
-			});
-		}
+		return labels;
+	};
 
 
 
-		// main event loop
-		while (running) {
-			// commit requests
-			conn.flush();
+	// gets the next event in a blocking fashion
+	auto next_event = [&conn] () {
+		conn.flush(); // flush pending requests
+		auto event = fluke::Event{xcb_wait_for_event(conn)};
 
-			try {
-				// handle events (blocking)
-				running = fluke::handle_events(conn, events);
-				// std::this_thread::sleep_for(std::chrono::microseconds{100});
+		if (xcb_connection_has_error(conn) != 0)
+			tinge::errorln("the connection has encountered an error!");
 
-			} catch (const fluke::ConfigureWindowError& e) {
-				tinge::errorln(e.what());
+		if (not event)
+			tinge::errorln("no event!");
 
-			} catch (const fluke::ChangeWindowAttributesError& e) {
-				tinge::errorln(e.what());
-
-			} catch (const fluke::GetWindowAttributesError& e) {
-				tinge::errorln(e.what());
-			}
-		}
+		return event;
+	};
 
 
-		// join hook_thread
-		if constexpr(hooks.size() > 0)
-			hook_thread.join();
+
+	// generate lookup table for labels
+	#define NEW_HANDLER(event_id, name) std::pair<decltype(XCB_ENTER_NOTIFY), void*>{ event_id, &&name##_label },
+		constexpr static auto labels = generate_table(&&unhandled_label, std::array{ EVENT_HANDLERS });
+	#undef NEW_HANDLER
 
 
-	} catch (const fluke::ConnectionError& e) {
-		tinge::errorln("fluke: cannot connect to X!");
-		return 2;
 
-	} catch (const fluke::ScreenError& e) {
-		tinge::errorln("fluke: cannot get screen information!");
-		return 3;
-	}
+	// return address of label corresponding to event type
+	constexpr auto next = [&] (const auto& ev) {
+		return labels[XCB_EVENT_RESPONSE_TYPE(ev.get())];
+	};
+
+
+
+	// jump to initial event handler
+	auto old_event = next_event();  // keep old event so it can be passed to handler
+	goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
+
+
+
+	// default case for unhandled events
+	unhandled_label:
+		FLUKE_DEBUG( tinge::warnln("unhandled event '", fluke::event_str[XCB_EVENT_RESPONSE_TYPE(old_event.get())], "'!") )
+		old_event = next_event();
+		goto* next(old_event);
+
+
+
+	// create labels for all event handlers
+	#define NEW_HANDLER(event_id, name) \
+		name##_label: \
+			fluke::event_handlers::event_##name(conn, std::move(old_event)); \
+			old_event = next_event(); \
+			goto* next(old_event);
+
+	EVENT_HANDLERS
+
+	#undef NEW_HANDLER
+
 
 	return 0;
 }

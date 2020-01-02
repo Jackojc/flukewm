@@ -15,7 +15,7 @@ namespace fluke {
 
 
 	template <typename T>
-	std::string to_hex(T&& arg) {
+	inline std::string to_hex(T&& arg) {
 		std::stringstream ss;
 		ss << "0x" << std::hex << arg;
 		return ss.str();
@@ -25,7 +25,7 @@ namespace fluke {
 
 	// Fire off a bunch of requests then get the reply to all of them.
 	template <typename T, typename F, typename... Ts>
-	auto dispatch_consume(fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args) {
+	inline auto dispatch_consume(fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args) {
 		std::vector<decltype(func(changing_arg.at(0), std::forward<Ts>(args)...))> request;
 		std::vector<decltype(fluke::get(conn, request.front()))> reply;
 
@@ -39,7 +39,7 @@ namespace fluke {
 	}
 
 
-	auto get_all_windows(fluke::Connection& conn) {
+	inline auto get_all_windows(fluke::Connection& conn) {
 		// Get all windows.
 		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
 
@@ -65,7 +65,7 @@ namespace fluke {
 	}
 
 
-	auto get_mapped_windows(fluke::Connection& conn) {
+	inline auto get_mapped_windows(fluke::Connection& conn) {
 		// Get all windows.
 		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
 
@@ -94,20 +94,20 @@ namespace fluke {
 
 
 
-	void adopt_orphaned_windows(fluke::Connection& conn) {
+	inline void adopt_orphans(fluke::Connection& conn) {
 		// register events and set border width & colour.
 		for (auto&& win: fluke::get_mapped_windows(conn)) {
 			fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
-			fluke::change_window_attributes(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, constants::BORDER_SIZE);
-			fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, constants::BORDER_COLOUR_INACTIVE);
+			fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, config::BORDER_SIZE);
+			fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
 		}
 
 		// get currently focused window
 		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus; // get currently focused window
 
 		if (focused != conn.root()) {
-			fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, constants::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
-			fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, constants::BORDER_COLOUR_ACTIVE);
+			fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, config::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
+			fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
 		}
 	}
 

@@ -7,7 +7,7 @@ TARGET=flukewm
 
 # Include & Link
 INCS=-I. -Isrc/ -Imodules/tinge/
-LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
+LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm $(LDLIBS)
 
 
 # Options
@@ -25,7 +25,7 @@ symbols ?= yes
 # Debugging
 ifeq ($(debug),no)
 	symbols ?= no
-	PROGRAM_CXXFLAGS=-flto -O3 -march=native -flto $(CXXFLAGS)
+	PROGRAM_CXXFLAGS=-flto -O3 -march=native -DNDEBUG $(CXXFLAGS)
 
 else ifeq ($(debug),yes)
 	symbols ?= yes

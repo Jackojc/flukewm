@@ -59,112 +59,13 @@ namespace fluke {
 	using Event = std::unique_ptr<xcb_generic_event_t>;
 
 	using Error = std::unique_ptr<xcb_generic_error_t>;
-
-
-	using EventCallback = void(*)(fluke::Connection&, fluke::Event&&);
-	using EventEntry = std::pair<int, EventCallback>;
-	using EventArray = std::array<EventCallback, XCB_GE_GENERIC>;
-}
-
-
-
-
-namespace fluke {
-
-	template <typename... Ts>
-	constexpr auto make_event_names(Ts&&... args) {
-		using ArrT = std::array<std::string_view, XCB_GE_GENERIC>;
-
-		ArrT names{};
-		std::array entries{ std::forward<Ts>(args)... };
-
-		for (auto& x: names)
-			x = "UNKNOWN_EVENT";
-
-		for (auto&& [index, value]: entries)
-			names[static_cast<ArrT::size_type>(index)] = value;
-
-		return names;
-	}
-
-
-	namespace detail {
-		void default_callback(fluke::Connection&, fluke::Event&& e) {
-			constexpr auto event_names = make_event_names(
-				std::pair{ 0,                     "EVENT_ERROR"       },
-				std::pair{ XCB_CREATE_NOTIFY,     "CREATE_NOTIFY"     },
-				std::pair{ XCB_DESTROY_NOTIFY,    "DESTROY_NOTIFY"    },
-				std::pair{ XCB_BUTTON_PRESS,      "BUTTON_PRESS"      },
-				std::pair{ XCB_BUTTON_RELEASE,    "BUTTON_RELEASE"    },
-				std::pair{ XCB_MOTION_NOTIFY,     "MOTION_NOTIFY"     },
-				std::pair{ XCB_ENTER_NOTIFY,      "ENTER_NOTIFY"      },
-				std::pair{ XCB_CONFIGURE_NOTIFY,  "CONFIGURE_NOTIFY"  },
-				std::pair{ XCB_KEY_PRESS,         "KEY_PRESS"         },
-				std::pair{ XCB_FOCUS_IN,          "FOCUS_IN"          },
-				std::pair{ XCB_FOCUS_OUT,         "FOCUS_OUT"         },
-				std::pair{ XCB_KEYMAP_NOTIFY,     "KEYMAP_NOTIFY"     },
-				std::pair{ XCB_EXPOSE,            "EXPOSE"            },
-				std::pair{ XCB_GRAPHICS_EXPOSURE, "GRAPHICS_EXPOSURE" },
-				std::pair{ XCB_NO_EXPOSURE,       "NO_EXPOSURE"       },
-				std::pair{ XCB_VISIBILITY_NOTIFY, "VISIBILITY_NOTIFY" },
-				std::pair{ XCB_UNMAP_NOTIFY,      "UNMAP_NOTIFY"      },
-				std::pair{ XCB_MAP_NOTIFY,        "MAP_NOTIFY"        },
-				std::pair{ XCB_MAP_REQUEST,       "MAP_REQUEST"       },
-				std::pair{ XCB_REPARENT_NOTIFY,   "REPARENT_NOTIFY"   },
-				std::pair{ XCB_CONFIGURE_REQUEST, "CONFIGURE_REQUEST" },
-				std::pair{ XCB_GRAVITY_NOTIFY,    "GRAVITY_NOTIFY"    },
-				std::pair{ XCB_RESIZE_REQUEST,    "RESIZE_REQUEST"    },
-				std::pair{ XCB_CIRCULATE_NOTIFY,  "CIRCULATE_NOTIFY"  },
-				std::pair{ XCB_PROPERTY_NOTIFY,   "PROPERTY_NOTIFY"   },
-				std::pair{ XCB_SELECTION_CLEAR,   "SELECTION_CLEAR"   },
-				std::pair{ XCB_SELECTION_REQUEST, "SELECTION_REQUEST" },
-				std::pair{ XCB_SELECTION_NOTIFY,  "SELECTION_NOTIFY"  },
-				std::pair{ XCB_COLORMAP_NOTIFY,   "COLORMAP_NOTIFY"   },
-				std::pair{ XCB_CLIENT_MESSAGE,    "CLIENT_MESSAGE"    },
-				std::pair{ XCB_MAPPING_NOTIFY,    "MAPPING_NOTIFY"    }
-			);
-
-			FLUKE_DEBUG( tinge::warnln("unhandled event '", tinge::fg::bright::yellow, event_names[XCB_EVENT_RESPONSE_TYPE(e.get())], tinge::reset, "'!") )
-		};
-	}
-
-
-	template <typename... Ts>
-	constexpr auto make_events(Ts&&... args) {
-		using ArrT = std::array<fluke::EventCallback, XCB_GE_GENERIC>;
-
-		ArrT events{};
-		std::array<fluke::EventEntry, sizeof...(Ts)> entries{ std::forward<Ts>(args)... };
-
-		for (auto& x: events)
-			x = &detail::default_callback;
-
-		for (auto&& [index, value]: entries)
-			events[static_cast<ArrT::size_type>(index)] = value;
-
-		return events;
-	}
-
-
-	bool handle_events(fluke::Connection& conn, const EventArray& events) {
-		auto event = fluke::Event{xcb_wait_for_event(conn)};
-
-		if (xcb_connection_has_error(conn) != 0) {
-			tinge::errorln("the connection has encountered an error!");
-			return false;
-		}
-
-		if (event)
-			events.at(XCB_EVENT_RESPONSE_TYPE(event.get()))(conn, std::move(event));
-
-		return true;
-	}
 }
 
 
 
 
 
+// functions to cast between event types
 namespace fluke {
 	// Use custom deleter
 	template <typename To, typename From, typename Del>

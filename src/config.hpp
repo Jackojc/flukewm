@@ -2,12 +2,12 @@
 
 #include <cstdint>
 
-namespace fluke::constants {
+namespace fluke::config {
 	// argb format
 	constexpr uint32_t BORDER_COLOUR_INACTIVE = 0xff000000;
 	constexpr uint32_t BORDER_COLOUR_ACTIVE   = 0xffffffff;
 
-	constexpr uint32_t BORDER_SIZE = 1;
+	constexpr uint32_t BORDER_SIZE = 2;
 
 }
 

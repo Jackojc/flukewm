@@ -48,7 +48,7 @@ namespace fluke::event_handlers {
 
 		print_event_name("FOCUS_IN", win);
 
-		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, constants::BORDER_COLOUR_ACTIVE);
+		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
 	}
 
 
@@ -59,11 +59,8 @@ namespace fluke::event_handlers {
 
 		print_event_name("FOCUS_OUT", win);
 
-		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, constants::BORDER_COLOUR_INACTIVE);
+		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
 	}
-
-
-
 
 
 	inline void event_create_notify(fluke::Connection& conn, fluke::Event&& e_) {
@@ -109,8 +106,8 @@ namespace fluke::event_handlers {
 			return;
 
 		fluke::map_window(conn, win);
-		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, constants::BORDER_COLOUR_ACTIVE);
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, constants::BORDER_SIZE);
+		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
+		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, config::BORDER_SIZE);
 	}
 
 
@@ -136,10 +133,10 @@ namespace fluke::event_handlers {
 	}
 
 
-	inline void event_error(fluke::Connection& conn, fluke::Event&& e_) {
+	inline void event_error(fluke::Connection&, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::Error>(std::move(e_));
 
-		auto major = fluke::major_str[e->major_code];
+		auto major = fluke::request_str[e->major_code];
 		auto error = fluke::error_str[e->error_code];
 		auto help = fluke::help_str[e->error_code];
 
