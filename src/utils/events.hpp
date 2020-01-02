@@ -69,7 +69,7 @@ namespace fluke {
 namespace fluke {
 	// Use custom deleter
 	template <typename To, typename From, typename Del>
-	decltype(auto) event_cast(std::unique_ptr<From, Del>&& ptr) {
+	inline decltype(auto) event_cast(std::unique_ptr<From, Del>&& ptr) {
 		return std::unique_ptr<typename To::element_type, Del>{
 			reinterpret_cast<typename To::element_type*>(ptr.release()), std::move(ptr.get_deleter())
 		};
@@ -78,7 +78,7 @@ namespace fluke {
 
 	// Use default deleter
 	template <typename To, typename From>
-	decltype(auto) event_cast(std::unique_ptr<From>&& ptr) {
+	inline decltype(auto) event_cast(std::unique_ptr<From>&& ptr) {
 		return std::unique_ptr<typename To::element_type>{
 			reinterpret_cast<typename To::element_type*>(ptr.release())
 		};

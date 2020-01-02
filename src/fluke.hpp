@@ -3,12 +3,11 @@
 // #define TINGE_PLAIN
 #include <tinge.hpp>
 
-#include <xcb.hpp>
-#include <xcb_errors.hpp>
-#include <exception.hpp>
+#include <xcb/xcb.hpp>
+#include <xcb/xcb_errors.hpp>
 
-#include <connection.hpp>
-#include <request.hpp>
+#include <structures/connection.hpp>
+#include <structures/request.hpp>
 
 #include <utils/zip.hpp>
 #include <utils/exec.hpp>

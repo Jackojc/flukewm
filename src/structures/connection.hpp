@@ -7,7 +7,7 @@
 namespace fluke {
 
 	namespace detail {
-		void cleanup_connection(xcb_connection_t* conn) {
+		void cleanup_connection(xcb_connection_t* conn) noexcept {
 			xcb_disconnect(conn);
 		}
 	}
@@ -25,11 +25,11 @@ namespace fluke {
 				conn(xcb_connect(nullptr, nullptr), &detail::cleanup_connection),
 				scrn(xcb_setup_roots_iterator(xcb_get_setup(conn.get())).data)
 			{
-				if (xcb_connection_has_error(conn.get()))
-					throw fluke::ConnectionError();
+				// if (xcb_connection_has_error(conn.get()))
+				// 	throw fluke::ConnectionError();
 
-				if (not scrn)
-					throw fluke::ScreenError();
+				// if (not scrn)
+				// 	throw fluke::ScreenError();
 			}
 
 
@@ -39,7 +39,7 @@ namespace fluke {
 				return conn.get();
 			}
 
-			operator xcb_screen_t*() const {
+			operator xcb_screen_t*() const noexcept {
 				return scrn;
 			}
 
@@ -50,11 +50,11 @@ namespace fluke {
 				return conn.get();
 			}
 
-			constexpr xcb_window_t root() const {
+			constexpr xcb_window_t root() const noexcept {
 				return scrn->root;
 			}
 
-			constexpr xcb_screen_t* screen() const {
+			constexpr xcb_screen_t* screen() const noexcept {
 				return scrn;
 			}
 
