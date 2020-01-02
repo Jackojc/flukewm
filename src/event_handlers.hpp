@@ -37,7 +37,8 @@ namespace fluke::event_handlers {
 		print_event_name("LEAVE_NOTIFY", win);
 
 		// enable this to unfocus window when pointer is moved outside of any windows
-		// fluke::SetInputFocus{conn, XCB_INPUT_FOCUS_POINTER_ROOT, conn.root(), XCB_CURRENT_TIME};
+		if constexpr(not config::USE_LAZY_FOCUS)
+			fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, conn.root());
 	}
 
 

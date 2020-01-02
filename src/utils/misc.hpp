@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <algorithm>
+#include <sstream>
+#include <string>
 
 #include <fluke.hpp>
 

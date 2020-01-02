@@ -21,8 +21,8 @@ I wanted a very minimal window manager that suited my workflow, had good hotplug
 > The planned features list is by no means exhaustive, it's just what I have managed to think of right now.
 
 #### current
-- Focus windows using the mouse.
-- Adopt orphaned windows by default (allows you to restart flukewm in the case of a crash and not lose any work.)
+- Focus windows using the mouse
+- Adopt orphaned windows by default (allows you to restart flukewm in the case of a crash and not lose any work)
 - Window borders
 - Hooks which run every N ms
 
@@ -33,7 +33,7 @@ I wanted a very minimal window manager that suited my workflow, had good hotplug
 - Window snapping
 - Workspaces (N per monitor)
 - Groups/Scratchpad (seperate from workspaces in that you hide or show them regardless of what workspace you're on)
-- _Basic_ EWMH support for docks, notifications, respectful closing of windows etc.
+- _Basic_ EWMH support for docks, notifications, respectful closing of windows etc
 - Monitor hotplug support (automatically re-adjust windows & layout, maybe a built in autorandr functionality?)
 - Keybindings
 

@@ -49,10 +49,10 @@ int main() {
 		auto event = fluke::Event{xcb_wait_for_event(conn)};
 
 		if (xcb_connection_has_error(conn) != 0)
-			tinge::errorln("the connection has encountered an error!");
+			tinge::errorln("cannot connect to the X server!");
 
 		if (not event)
-			tinge::errorln("no event!");
+			tinge::errorln("event returned nullptr, this shouldnt happen!");
 
 		return event;
 	};
@@ -61,13 +61,13 @@ int main() {
 
 	// generate lookup table for labels
 	#define NEW_HANDLER(event_id, name) std::pair<decltype(XCB_ENTER_NOTIFY), void*>{ event_id, &&name##_label },
-		constexpr static auto labels = generate_table(&&unhandled_label, std::array{ EVENT_HANDLERS });
+		constexpr auto labels = generate_table(&&unhandled_label, std::array{ EVENT_HANDLERS });
 	#undef NEW_HANDLER
 
 
 
 	// return address of label corresponding to event type
-	constexpr auto next = [&] (const auto& ev) {
+	auto next = [&labels] (const auto& ev) {
 		return labels[XCB_EVENT_RESPONSE_TYPE(ev.get())];
 	};
 
@@ -97,6 +97,8 @@ int main() {
 	EVENT_HANDLERS
 
 	#undef NEW_HANDLER
+
+	exit:
 
 
 	return 0;

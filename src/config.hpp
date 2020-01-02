@@ -9,5 +9,8 @@ namespace fluke::config {
 
 	constexpr uint32_t BORDER_SIZE = 2;
 
+	// if cursor moves onto root window, should focus be lost on current window?
+	constexpr bool USE_LAZY_FOCUS = true;
+
 }
 
