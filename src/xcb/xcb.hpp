@@ -9,6 +9,7 @@ extern "C" {
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_atom.h>
 #include <xcb/xcb_icccm.h>
+#include <xcb/xcb_ewmh.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xproto.h>

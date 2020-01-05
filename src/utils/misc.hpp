@@ -4,10 +4,17 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
-
 #include <fluke.hpp>
 
+
 namespace fluke {
+	/*
+		Macro for toggling code on/off depending on whether we are in release or
+		debug builds.
+
+		example:
+			FLUKE_DEBUG( std::cerr << "debug string\n" )
+	*/
 	#ifdef NDEBUG
 		#define FLUKE_DEBUG(x) { }
 	#else
@@ -16,6 +23,12 @@ namespace fluke {
 
 
 
+	/*
+		Converts a numeric argument to hexadecimal format with 0x prepended.
+
+		example:
+			to_hex(123);
+	*/
 	template <typename T>
 	inline std::string to_hex(T&& arg) {
 		std::stringstream ss;
@@ -25,92 +38,335 @@ namespace fluke {
 
 
 
-	// Fire off a bunch of requests then get the reply to all of them.
+	/*
+		Sends a series of requests all at once then immediatetely after
+		blocks until the replies are fetched.
+
+		A new request is fired off for each argument in `changing_arg`.
+		For every request, this is the only argument that changes, the other
+		argument remain constant for all requests.
+
+		example:
+			dispatch_consume(conn, [] (auto&& win, auto&&... args) {
+				return fluke::get_window_attributes( args..., win );
+			}, windows);
+	*/
 	template <typename T, typename F, typename... Ts>
 	inline auto dispatch_consume(fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args) {
 		std::vector<decltype(func(changing_arg.at(0), std::forward<Ts>(args)...))> request;
 		std::vector<decltype(fluke::get(conn, request.front()))> reply;
 
-		for (auto x: changing_arg)
+		// Fire off a request for each argument in `changing_arg` while passing
+		// the unchanging args too.
+		for (auto& x: changing_arg)
 			request.emplace_back(func(x, std::forward<Ts>(args)...));
 
-		for (auto x: request)
+		// Block on each request to fetch it's reply.
+		for (const auto& x: request)
 			reply.emplace_back(fluke::get(conn, x));
 
 		return reply;
 	}
 
 
+
+	/*
+		Returns a vector of all windows.
+
+		example:
+			get_tree(conn);
+	*/
+	inline auto get_tree(fluke::Connection& conn) {
+		// Ask X for a list of windows, returns a pointer to
+		// an `xcb_query_tree_reply_t` structure.
+		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
+
+		// Create a vector using start pointer and end pointer.
+		// Each element is copied into the vector.
+		std::vector<xcb_window_t> windows{
+			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
+			xcb_query_tree_children(tree.get()) + xcb_query_tree_children_length(tree.get())
+		};
+
+		return windows;
+	}
+
+
+
+	/*
+		Returns a vector of xcb_window_t IDs which contains all of the known windows.
+
+		example:
+			get_all_windows(conn);
+	*/
 	inline auto get_all_windows(fluke::Connection& conn) {
 		// Get all windows.
-		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
+		auto windows = fluke::get_tree(conn);
 
-		std::vector<xcb_window_t> windows{
-			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
-			xcb_query_tree_children(tree.get()) + xcb_query_tree_children_length(tree.get())
+		// Get window attributes for every ID in `windows`.
+		auto attrs = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+			return fluke::get_window_attributes( conn, win );
+		}, windows);
+
+
+		// We use `i` to allow indexing `attrs` while simultaneously indexing `windows`.
+		decltype(attrs)::size_type i = 0;
+
+		// Remove windows which have override_redirect set, they have asked to
+		// not be managed by the window manager.
+		const auto pred = [&attrs, &i] (xcb_window_t) {
+			return attrs[i++]->override_redirect;
 		};
 
-
-		// Get window attributes.
-		auto attrs = fluke::dispatch_consume(conn, [] (auto&& win, auto&&... args) {
-			return fluke::get_window_attributes( args..., win );
-		}, windows, conn);
-
-
-		// Ignore windows which have override_redirect set.
-		decltype(attrs)::size_type i = 0;
-		windows.erase(std::remove_if(windows.begin(), windows.end(), [&] (xcb_window_t) {
-			return attrs[i++]->override_redirect;
-		}), windows.end());
+		windows.erase(std::remove_if(windows.begin(), windows.end(), pred), windows.end());
 
 		return windows;
 	}
 
 
+
+	/*
+		This is the same as `get_all_windows` except that it filters
+		out unmapped(invisible) windows.
+
+		example:
+			get_mapped_windows(conn);
+	*/
 	inline auto get_mapped_windows(fluke::Connection& conn) {
 		// Get all windows.
-		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
+		auto windows = fluke::get_tree(conn);
 
-		std::vector<xcb_window_t> windows{
-			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
-			xcb_query_tree_children(tree.get()) + xcb_query_tree_children_length(tree.get())
+		// Get window attributes for every ID in `windows`.
+		auto attrs = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+			return fluke::get_window_attributes( conn, win );
+		}, windows);
+
+
+		// We use `i` to allow indexing `attrs` while simultaneously indexing `windows`.
+		decltype(attrs)::size_type i = 0;
+
+		// Remove windows which have override_redirect set and are unmapped,
+		// they have asked to not be managed by the window manager.
+		const auto pred = [&attrs, &i] (xcb_window_t) {
+			return attrs[i]->override_redirect and not(attrs[i++]->map_state == XCB_MAP_STATE_VIEWABLE);
 		};
 
-
-		// Get window attributes.
-		auto attrs = fluke::dispatch_consume(conn, [] (auto&& win, auto&&... args) {
-			return fluke::get_window_attributes( args..., win );
-		}, windows, conn);
-
-
-		// Ignore windows which have override_redirect set.
-		decltype(attrs)::size_type i = 0;
-		windows.erase(std::remove_if(windows.begin(), windows.end(), [&] (xcb_window_t) {
-			bool flag = not attrs.at(i)->override_redirect and attrs.at(i)->map_state == XCB_MAP_STATE_VIEWABLE;
-			i++;
-			return not flag;
-		}), windows.end());
+		windows.erase(std::remove_if(windows.begin(), windows.end(), pred), windows.end());
 
 		return windows;
 	}
 
 
 
+	/*
+		Gain control of windows which were already open before the window manager was started
+		so that we can receive events for them.
+
+		example:
+			adopt_orphans(conn);
+	*/
 	inline void adopt_orphans(fluke::Connection& conn) {
-		// register events and set border width & colour.
-		for (auto&& win: fluke::get_mapped_windows(conn)) {
+		// For every mapped window, tell it what events we wish to receive from it
+		// and also set the border colour and width of the window.
+		for (xcb_window_t win: fluke::get_mapped_windows(conn)) {
 			fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
 			fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, config::BORDER_SIZE);
 			fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
 		}
 
-		// get currently focused window
-		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus; // get currently focused window
+		// Get the window which currently has keyboard focus (if there is one)
+		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
 
-		if (focused != conn.root()) {
-			fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, config::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
-			fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
-		}
+		// Set the stacking mode, border width and border colour for the focused window.
+		fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, config::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
+		fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
+	}
+
+
+
+	/*
+		Returns a vector of xcb_randr_provider_t which contains all of the known providers.
+
+		example:
+			get_providers(conn);
+	*/
+	inline auto get_providers(fluke::Connection& conn) {
+		auto provider_info = fluke::get(conn, fluke::randr_get_providers(conn, conn.root()));
+
+		// Create a vector using start pointer and end pointer.
+		// Each element is copied into the vector.
+		std::vector<xcb_randr_provider_t> providers{
+			xcb_randr_get_providers_providers(provider_info.get()),  // pointer to array of windows.
+			xcb_randr_get_providers_providers(provider_info.get()) + xcb_randr_get_providers_providers_length(provider_info.get())
+		};
+
+		return providers;
+	}
+
+
+
+	/*
+		Returns a vector of xcb_randr_output_t IDs which contains all of the known displays.
+
+		example:
+			get_provider_info(conn, provider);
+	*/
+	inline auto get_provider_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
+		auto output_info = fluke::get(conn, fluke::randr_get_provider_info(conn, provider));
+
+		// Create a vector using start pointer and end pointer.
+		// Each element is copied into the vector.
+		std::vector<xcb_randr_output_t> outputs{
+			xcb_randr_get_provider_info_outputs(output_info.get()),  // pointer to array of outputs.
+			xcb_randr_get_provider_info_outputs(output_info.get()) + xcb_randr_get_provider_info_outputs_length(output_info.get())
+		};
+
+		return outputs;
+	}
+
+
+
+	/*
+		Returns a vector of screen resources.
+
+		example:
+			get_screen_resources(conn);
+	*/
+	inline auto get_screen_resources(fluke::Connection& conn) {
+		auto screen_resources = fluke::get(conn, fluke::randr_get_screen_resources_current(conn, conn.root()));
+
+		// Create a vector using start pointer and end pointer.
+		// Each element is copied into the vector.
+		std::vector<xcb_randr_output_t> outputs{
+			xcb_randr_get_screen_resources_current_outputs(screen_resources.get()),  // pointer to array of outputs.
+			xcb_randr_get_screen_resources_current_outputs(screen_resources.get()) +
+				xcb_randr_get_screen_resources_current_outputs_length(screen_resources.get())
+		};
+
+		return outputs;
+	}
+
+
+
+	/*
+		Returns a vector of output info structures.
+
+		example:
+			get_output_info(conn);
+	*/
+	// inline auto get_output_info(fluke::Connection& conn) {
+	// 	std::vector<fluke::RandrGetOutputInfoCookie> output_info;
+
+	// 	// Loop through each provider.
+	// 	for (auto& provider: fluke::get_providers(conn)) {
+	// 		// Get info about each provider.
+	// 		for (auto& output: fluke::get_provider_info(conn, provider)) {
+	// 			// Get the output info of every provider.
+	// 			output_info.emplace_back( fluke::randr_get_output_info(conn, output) );
+	// 		}
+	// 	}
+
+	// 	// Get replies to CRTC requests.
+	// 	std::vector<decltype(fluke::get(conn, output_info.front()))> output_info_replies;
+
+	// 	for (auto& c: output_info)
+	// 		output_info_replies.emplace_back( fluke::get(conn, c) );
+
+	// 	return output_info_replies;
+	// }
+
+
+
+	/*
+		Returns a vector of xcb_randr_crtc_t structures which contains the
+		attributes of all connected displays.
+
+		example:
+			get_output_attributes(conn);
+	*/
+	inline auto get_crtcs(fluke::Connection& conn) {
+		auto outputs = fluke::get_screen_resources(conn);
+
+		// Get output info for each display.
+		auto output_info = fluke::dispatch_consume(conn, [&conn] (xcb_randr_output_t out) {
+			return fluke::randr_get_output_info( conn, out );
+		}, outputs);
+
+
+		// Remove disconnected displays.
+		output_info.erase(std::remove_if(output_info.begin(), output_info.end(), [] (const auto& info) {
+			return info->connection == XCB_RANDR_CONNECTION_DISCONNECTED or info->crtc == XCB_NONE;
+		}), output_info.end());
+
+
+		// Get CRTC structures.
+		auto crtcs = fluke::dispatch_consume(conn, [&conn] (const auto& info) {
+			return fluke::randr_get_crtc_info( conn, info->crtc );
+		}, output_info);
+
+		return crtcs;
+	}
+
+
+
+	/*
+		Get the display which the window geometry is on.
+
+		example:
+			get_focused_display(conn);
+	*/
+	// template <typename T>
+	// inline auto get_focused_display_for_geometry(fluke::Connection& conn, const T& geom) {
+	// 	auto crtcs = fluke::get_crtcs(conn);
+	// 	auto&& disp_ret = crtcs.front();
+
+	// 	auto win_x = geom->x;
+	// 	auto win_y = geom->y;
+	// 	auto win_width = geom->width;
+	// 	auto win_height = geom->height;
+
+	// 	auto center_x = win_x + (win_width / 2);
+	// 	auto center_y = win_y + (win_height / 2);
+
+	// 	for (auto&& disp: crtcs) {
+	// 		auto disp_x = disp->x;
+	// 		auto disp_y = disp->y;
+	// 		auto disp_width = disp->width;
+	// 		auto disp_height = disp->height;
+
+	// 		bool on_display =
+	// 			center_x >= disp_x and
+	// 			center_y >= disp_y and
+	// 			center_x <= (disp_x + disp_width) and
+	// 			center_y <= (disp_y + disp_height);
+
+	// 		return std::move(disp);
+	// 	}
+
+	// 	return std::move(disp_ret);
+	// }
+
+
+
+
+	template <typename T, size_t N>
+	inline void register_keykindings(fluke::Connection& conn, const std::array<T, N>& keys) {
+
+	}
+
+
+
+
+	inline xcb_keysym_t get_keysym(fluke::Connection& conn, xcb_keycode_t keycode) {
+		xcb_key_symbols_t *keysyms;
+
+		if (!(keysyms = xcb_key_symbols_alloc(conn)))
+			return 0;
+
+		xcb_keysym_t keysym = xcb_key_symbols_get_keysym(keysyms, keycode, 0);
+		xcb_key_symbols_free(keysyms);
+
+		return keysym;
 	}
 
 }

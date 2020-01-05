@@ -25,11 +25,7 @@ namespace fluke {
 				conn(xcb_connect(nullptr, nullptr), &detail::cleanup_connection),
 				scrn(xcb_setup_roots_iterator(xcb_get_setup(conn.get())).data)
 			{
-				// if (xcb_connection_has_error(conn.get()))
-				// 	throw fluke::ConnectionError();
 
-				// if (not scrn)
-				// 	throw fluke::ScreenError();
 			}
 
 
@@ -37,10 +33,6 @@ namespace fluke {
 		public:
 			operator xcb_connection_t*() const {
 				return conn.get();
-			}
-
-			operator xcb_screen_t*() const noexcept {
-				return scrn;
 			}
 
 

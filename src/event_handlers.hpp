@@ -6,12 +6,15 @@
 #include <fluke.hpp>
 
 
-namespace fluke::event_handlers {
-	// void(*)(fluke::Connection&, fluke::Event&&);
+namespace fluke {
+	// Function signature for event handlers: void(*)(fluke::Connection&, fluke::Event&&);
+
+
 
 	inline void print_event_name(const char* name, xcb_window_t win) {
 		FLUKE_DEBUG( tinge::noticeln("event '", tinge::fg::yellow, name, tinge::reset, "' for '", tinge::fg::yellow , fluke::to_hex(win), tinge::reset, "'") )
 	}
+
 
 
 	inline void event_enter_notify(fluke::Connection& conn, fluke::Event&& e_) {
@@ -64,6 +67,7 @@ namespace fluke::event_handlers {
 	}
 
 
+
 	inline void event_create_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::CreateNotifyEvent>(std::move(e_));
 		xcb_window_t win = e->window;
@@ -112,6 +116,7 @@ namespace fluke::event_handlers {
 	}
 
 
+
 	// this event cant be very hot if using a tool like xmmv
 	inline void event_configure_request(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(e_));
@@ -134,8 +139,22 @@ namespace fluke::event_handlers {
 	}
 
 
+
+	inline void event_keypress(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::KeyPressEvent>(std::move(e_));
+		xcb_keysym_t keysym = fluke::get_keysym(conn, e->detail);
+
+		print_event_name("KEYPRESS", XCB_NONE);
+		tinge::println(keysym);
+
+	}
+
+
+
 	inline void event_error(fluke::Connection&, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::Error>(std::move(e_));
+
+		print_event_name("EVENT_ERROR", XCB_NONE);
 
 		auto major = fluke::request_str[e->major_code];
 		auto error = fluke::error_str[e->error_code];
@@ -153,6 +172,5 @@ namespace fluke::event_handlers {
 			"\n\t", tinge::fg::dim::cyan, "help  ", tinge::reset, help
 		);
 	}
-
 }
 

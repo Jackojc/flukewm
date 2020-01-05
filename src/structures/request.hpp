@@ -55,18 +55,19 @@ namespace fluke {
 
 
 	// Getters
-	GET_REQUEST(InternAtom,            intern_atom)
-	GET_REQUEST(GetWindowAttributes,   get_window_attributes)
-	GET_REQUEST(GetGeometry,           get_geometry)
-	GET_REQUEST(GetProperty,           get_property)
-	GET_REQUEST(GetInputFocus,         get_input_focus)
-	GET_REQUEST(QueryTree,             query_tree)
-	GET_REQUEST(QueryPointer,          query_pointer)
-	GET_REQUEST(RandrGetProviders,     randr_get_providers)
-	GET_REQUEST(RandrGetProviderInfo,  randr_get_provider_info)
-	GET_REQUEST(RandrGetOutputInfo,    randr_get_output_info)
-	GET_REQUEST(RandrGetCrtcInfo,      randr_get_crtc_info)
-	GET_REQUEST(RandrGetOutputPrimary, randr_get_output_primary)
+	GET_REQUEST(InternAtom,                     intern_atom)
+	GET_REQUEST(GetWindowAttributes,            get_window_attributes)
+	GET_REQUEST(GetGeometry,                    get_geometry)
+	GET_REQUEST(GetProperty,                    get_property)
+	GET_REQUEST(GetInputFocus,                  get_input_focus)
+	GET_REQUEST(QueryTree,                      query_tree)
+	GET_REQUEST(QueryPointer,                   query_pointer)
+	GET_REQUEST(RandrGetProviders,              randr_get_providers)
+	GET_REQUEST(RandrGetProviderInfo,           randr_get_provider_info)
+	GET_REQUEST(RandrGetOutputInfo,             randr_get_output_info)
+	GET_REQUEST(RandrGetCrtcInfo,               randr_get_crtc_info)
+	GET_REQUEST(RandrGetOutputPrimary,          randr_get_output_primary)
+	GET_REQUEST(RandrGetScreenResourcesCurrent, randr_get_screen_resources_current)
 
 
 	// Setters
@@ -75,6 +76,8 @@ namespace fluke {
 	SET_REQUEST(SetInputFocus,          set_input_focus)
 	SET_REQUEST(MapWindow,              map_window)
 	SET_REQUEST(UnmapWindow,            unmap_window)
+	SET_REQUEST(GrabKey,                grab_key)
+	SET_REQUEST(UngrabKey,              ungrab_key)
 
 
 
@@ -151,7 +154,7 @@ namespace fluke {
 	}
 
 
-	inline RandrGetOutputInfoCookie randr_get_output_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
+	inline RandrGetOutputInfoCookie randr_get_output_info(fluke::Connection& conn, xcb_randr_output_t provider) {
 		return xcb_randr_get_output_info_unchecked(conn, provider, XCB_CURRENT_TIME);
 	}
 
@@ -164,6 +167,12 @@ namespace fluke {
 	inline RandrGetOutputPrimaryCookie randr_get_output_primary(fluke::Connection& conn, xcb_window_t win) {
 		return xcb_randr_get_output_primary_unchecked(conn, win);
 	}
+
+
+	inline RandrGetScreenResourcesCurrentCookie randr_get_screen_resources_current(fluke::Connection& conn, xcb_window_t win) {
+		return xcb_randr_get_screen_resources_current_unchecked(conn, win);
+	}
+
 
 
 
@@ -212,6 +221,26 @@ namespace fluke {
 
 	inline UnmapWindowCookie unmap_window(fluke::Connection& conn, xcb_window_t win) {
 		return xcb_unmap_window(conn, win);
+	}
+
+
+
+
+	inline GrabKeyCookie grab_key(
+		fluke::Connection& conn,
+		uint8_t owner_events,
+		xcb_window_t grab_window,
+		uint16_t modifiers,
+		xcb_keycode_t key,
+		uint8_t pointer_mode,
+		uint8_t keyboard_mode
+	) {
+		return xcb_grab_key(conn, owner_events, grab_window, modifiers, key, pointer_mode, keyboard_mode);
+	}
+
+
+	inline UngrabKeyCookie ungrab_key(fluke::Connection& conn, xcb_keycode_t key, xcb_window_t grab_window, uint16_t modifiers) {
+		return xcb_ungrab_key(conn, key, grab_window, modifiers);
 	}
 }
 
