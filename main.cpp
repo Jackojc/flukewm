@@ -53,6 +53,10 @@ int main() {
 	fluke::adopt_orphans(conn);
 
 
+	// Register keybindings defined in the `keys` structure of the config.
+	fluke::register_keybindings(conn, fluke::config::keys);
+
+
 	// Define event handlers. NEW_HANDLER(event_id, handler_name)
 	#define EVENT_HANDLERS \
 		NEW_HANDLER( 0,                     event_error             ) \
@@ -61,8 +65,11 @@ int main() {
 		NEW_HANDLER( XCB_FOCUS_IN,          event_focus_in          ) \
 		NEW_HANDLER( XCB_FOCUS_OUT,         event_focus_out         ) \
 		NEW_HANDLER( XCB_CREATE_NOTIFY,     event_create_notify     ) \
+		NEW_HANDLER( XCB_DESTROY_NOTIFY,    event_destroy_notify    ) \
 		NEW_HANDLER( XCB_MAP_REQUEST,       event_map_request       ) \
-		NEW_HANDLER( XCB_CONFIGURE_REQUEST, event_configure_request )
+		NEW_HANDLER( XCB_UNMAP_NOTIFY,      event_unmap_notify      ) \
+		NEW_HANDLER( XCB_CONFIGURE_REQUEST, event_configure_request ) \
+		NEW_HANDLER( XCB_KEY_PRESS,         event_keypress          )
 
 
 	// Returns a lookup table.
@@ -89,6 +96,7 @@ int main() {
 	// Get the next event (blocking).
 	auto next_event = [&conn] () {
 		conn.flush(); // Flush pending requests.
+
 		auto event = fluke::Event{xcb_wait_for_event(conn)};
 
 		// Check for errors.

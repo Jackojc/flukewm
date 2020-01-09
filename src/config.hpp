@@ -3,13 +3,21 @@
 #include <cstdint>
 // #include <fluke.hpp>
 #include <X11/keysym.h>
+#include <X11/XF86keysym.h>
+
 
 namespace fluke::config {
 	// argb format
 	constexpr uint32_t BORDER_COLOUR_INACTIVE = 0x66000000;
-	constexpr uint32_t BORDER_COLOUR_ACTIVE   = 0xffffffff;
+	constexpr uint32_t BORDER_COLOUR_ACTIVE   = 0x66ffffff;
 
-	constexpr uint32_t BORDER_SIZE = 2;
+	constexpr uint32_t BORDER_SIZE = 1;
+
+
+	// If enabled, windows will become focused when the mouse
+	// enters their bounds.
+	constexpr bool MOUSE_FOCUS = true;
+
 
 	// This flag makes it so that if the cursor moves off a window
 	// and onto the root window, do not unfocus the window.
@@ -17,39 +25,32 @@ namespace fluke::config {
 	constexpr bool USE_LAZY_FOCUS = true;
 
 
-
-	using KeyCallback = void(*)(fluke::Connection&, uint32_t);
-	struct Key {
-		unsigned int mod;
-		xcb_keysym_t keysym;
-		KeyCallback func;
-		uint32_t arg;
-	};
+	// This will lock the cursor to the bounds of the focused
+	// window when true.
+	constexpr bool LOCK_CURSOR_TO_WINDOW = true;
 
 
-	void print_p(fluke::Connection& conn, uint32_t arg) {
-		tinge::println("key callback `print_p` with arg ", arg);
+	// If true, windows will have borders and title bars.
+	constexpr bool REPARENT_WINDOWS = true;
+
+
+
+
+	// Callbacks for keybindings.
+	void print_p(fluke::Connection& conn, const std::vector<uint32_t>& arg) {
+		tinge::println("key callback `print_p` with arg ");
+	}
+
+	void print_a(fluke::Connection& conn, const std::vector<uint32_t>& arg) {
+		tinge::println("key callback `print_shift_a` with arg ");
 	}
 
 
 
-	constexpr auto MOD     = XCB_MOD_MASK_4;
-	constexpr auto CONTROL = XCB_MOD_MASK_CONTROL;
-	constexpr auto ALT     = XCB_MOD_MASK_1;
-	constexpr auto SHIFT   = XCB_MOD_MASK_SHIFT;
-
-	constexpr std::array keys = {
-		Key{ MOD, XK_p, print_p, 1333 },
-		// Key{},
-		// Key{},
-		// Key{},
-		// Key{},
-		// Key{},
-		// Key{},
-		// Key{},
-		// Key{},
-		// Key{},
+	// Keys
+	const fluke::Keys keys {
+		fluke::Key{ fluke::XCB_MASK_SUPER, XK_p, print_p, {1333} },
+		fluke::Key{ fluke::XCB_MASK_SUPER | fluke::XCB_MASK_SHIFT, XK_a, print_a, {13712} },
 	};
-
 }
 

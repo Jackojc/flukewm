@@ -228,7 +228,7 @@ namespace fluke {
 
 	inline GrabKeyCookie grab_key(
 		fluke::Connection& conn,
-		uint8_t owner_events,
+		bool owner_events,
 		xcb_window_t grab_window,
 		uint16_t modifiers,
 		xcb_keycode_t key,

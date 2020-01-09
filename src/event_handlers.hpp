@@ -21,14 +21,16 @@ namespace fluke {
 		auto e = fluke::event_cast<fluke::EnterNotifyEvent>(std::move(e_));
 		xcb_window_t win = e->event;
 
+		fluke::on_hover_in(conn);
+
 		print_event_name("ENTER_NOTIFY", win);
 
 		if (e->mode != XCB_NOTIFY_MODE_NORMAL and e->mode != XCB_NOTIFY_MODE_UNGRAB)
 			return;
 
 		// set input focus to new window, set borders and stacking order.
-		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, win);
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		if constexpr(fluke::config::MOUSE_FOCUS)
+			fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, win);
 	}
 
 
@@ -36,6 +38,8 @@ namespace fluke {
 	inline void event_leave_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::LeaveNotifyEvent>(std::move(e_));
 		xcb_window_t win = e->event;
+
+		fluke::on_hover_out(conn);
 
 		print_event_name("LEAVE_NOTIFY", win);
 
@@ -50,9 +54,12 @@ namespace fluke {
 		auto e = fluke::event_cast<fluke::FocusInEvent>(std::move(e_));
 		xcb_window_t win = e->event;
 
+		fluke::on_focus_in(conn);
+
 		print_event_name("FOCUS_IN", win);
 
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
+		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 	}
 
 
@@ -60,6 +67,8 @@ namespace fluke {
 	inline void event_focus_out(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::FocusOutEvent>(std::move(e_));
 		xcb_window_t win = e->event;
+
+		fluke::on_focus_out(conn);
 
 		print_event_name("FOCUS_OUT", win);
 
@@ -71,6 +80,8 @@ namespace fluke {
 	inline void event_create_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::CreateNotifyEvent>(std::move(e_));
 		xcb_window_t win = e->window;
+
+		fluke::on_create(conn);
 
 		print_event_name("CREATE_NOTIFY", win);
 
@@ -101,9 +112,22 @@ namespace fluke {
 
 
 
+	inline void event_destroy_notify(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::DestroyNotifyEvent>(std::move(e_));
+		xcb_window_t win = e->window;
+
+		fluke::on_destroy(conn);
+
+		print_event_name("DESTROY_NOTIFY", win);
+	}
+
+
+
 	inline void event_map_request(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::MapRequestEvent>(std::move(e_));
 		xcb_window_t win = e->window;
+
+		fluke::on_map(conn);
 
 		print_event_name("MAP_REQUEST", win);
 
@@ -112,7 +136,17 @@ namespace fluke {
 
 		fluke::map_window(conn, win);
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, config::BORDER_SIZE);
+		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, config::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
+	}
+
+
+
+	inline void event_unmap_notify(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::UnmapNotifyEvent>(std::move(e_));
+		xcb_window_t win = e->window;
+
+		print_event_name("UNMAP_NOTIFY", win);
+
 	}
 
 
@@ -122,6 +156,8 @@ namespace fluke {
 		auto e = fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(e_));
 		xcb_window_t win = e->window;
 		uint16_t mask = e->value_mask;
+
+		fluke::on_configure(conn);
 
 		print_event_name("CONFIGURE_REQUEST", win);
 
@@ -144,15 +180,32 @@ namespace fluke {
 		auto e = fluke::event_cast<fluke::KeyPressEvent>(std::move(e_));
 		xcb_keysym_t keysym = fluke::get_keysym(conn, e->detail);
 
-		print_event_name("KEYPRESS", XCB_NONE);
-		tinge::println(keysym);
+		fluke::on_keypress(conn);
 
+		print_event_name("KEYPRESS", XCB_NONE);
+
+		// Find `fluke::Key` structure which has a matching keysym.
+		auto it = std::find_if(fluke::config::keys.begin(), fluke::config::keys.end(), [&keysym] (const auto& key) {
+			return key.keysym == keysym;
+		});
+
+
+		// Run the callback if one is found.
+		if (it != fluke::config::keys.end()) {
+			auto& [mod, sym, func, args] = *it;
+			func(conn, args);
+
+		} else {
+			FLUKE_DEBUG( tinge::warnln("no callback was found for key.") )
+		}
 	}
 
 
 
-	inline void event_error(fluke::Connection&, fluke::Event&& e_) {
+	inline void event_error(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::Error>(std::move(e_));
+
+		fluke::on_error(conn);
 
 		print_event_name("EVENT_ERROR", XCB_NONE);
 

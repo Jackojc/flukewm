@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
-
 #include <fluke.hpp>
+
 
 namespace fluke {
 
@@ -16,6 +16,8 @@ namespace fluke {
 		// Data
 		private:
 			std::unique_ptr<xcb_connection_t, decltype(&detail::cleanup_connection)> conn;
+			std::unique_ptr<xcb_key_symbols_t, decltype(&xcb_key_symbols_free)> key_symbols;
+
 			xcb_screen_t* scrn;
 
 
@@ -23,6 +25,7 @@ namespace fluke {
 		public:
 			Connection():
 				conn(xcb_connect(nullptr, nullptr), &detail::cleanup_connection),
+				key_symbols(xcb_key_symbols_alloc(conn.get()), &xcb_key_symbols_free),
 				scrn(xcb_setup_roots_iterator(xcb_get_setup(conn.get())).data)
 			{
 
@@ -40,6 +43,10 @@ namespace fluke {
 		public:
 			xcb_connection_t* get() const {
 				return conn.get();
+			}
+
+			xcb_key_symbols_t* keysyms() const {
+				return key_symbols.get();
 			}
 
 			constexpr xcb_window_t root() const noexcept {

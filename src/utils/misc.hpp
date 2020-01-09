@@ -174,7 +174,8 @@ namespace fluke {
 			fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
 		}
 
-		// Get the window which currently has keyboard focus (if there is one)
+		// Get the window which currently has keyboard focus
+		// (if no window is focused an error will be generated but we just ignore it)
 		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
 
 		// Set the stacking mode, border width and border colour for the focused window.
@@ -249,35 +250,6 @@ namespace fluke {
 
 
 	/*
-		Returns a vector of output info structures.
-
-		example:
-			get_output_info(conn);
-	*/
-	// inline auto get_output_info(fluke::Connection& conn) {
-	// 	std::vector<fluke::RandrGetOutputInfoCookie> output_info;
-
-	// 	// Loop through each provider.
-	// 	for (auto& provider: fluke::get_providers(conn)) {
-	// 		// Get info about each provider.
-	// 		for (auto& output: fluke::get_provider_info(conn, provider)) {
-	// 			// Get the output info of every provider.
-	// 			output_info.emplace_back( fluke::randr_get_output_info(conn, output) );
-	// 		}
-	// 	}
-
-	// 	// Get replies to CRTC requests.
-	// 	std::vector<decltype(fluke::get(conn, output_info.front()))> output_info_replies;
-
-	// 	for (auto& c: output_info)
-	// 		output_info_replies.emplace_back( fluke::get(conn, c) );
-
-	// 	return output_info_replies;
-	// }
-
-
-
-	/*
 		Returns a vector of xcb_randr_crtc_t structures which contains the
 		attributes of all connected displays.
 
@@ -348,26 +320,93 @@ namespace fluke {
 
 
 
+	/*
+		Gets a vector of keycodes from a supplied keysym.
 
-	template <typename T, size_t N>
-	inline void register_keykindings(fluke::Connection& conn, const std::array<T, N>& keys) {
+		example:
+			get_keycodes(conn, keysym);
+	*/
+	auto get_keycodes(fluke::Connection& conn, xcb_keysym_t sym) {
+		// Get a pointer to an array of keycodes.
+		auto keycode_ptr = std::unique_ptr<xcb_keycode_t, decltype(&std::free)>{
+			xcb_key_symbols_get_keycode(conn.keysyms(), sym), &std::free
+		};
 
+		// The array we got above is terminated with `XCB_NO_SYMBOL`.
+		// Find the length of the array.
+		int count = 0;
+		while (keycode_ptr.get()[count] != XCB_NO_SYMBOL)
+			count++;
+
+		// Use pointer + length to create a vector.
+		std::vector<xcb_keycode_t> keycodes{
+			keycode_ptr.get(),
+			keycode_ptr.get() + count
+		};
+
+		return keycodes;
 	}
 
 
 
+	/*
+		Convert a keycode to a keysym.
 
-	inline xcb_keysym_t get_keysym(fluke::Connection& conn, xcb_keycode_t keycode) {
-		xcb_key_symbols_t *keysyms;
-
-		if (!(keysyms = xcb_key_symbols_alloc(conn)))
-			return 0;
-
-		xcb_keysym_t keysym = xcb_key_symbols_get_keysym(keysyms, keycode, 0);
-		xcb_key_symbols_free(keysyms);
-
-		return keysym;
+		example:
+			get_keysym(conn, keycode);
+	*/
+	auto get_keysym(fluke::Connection& conn, xcb_keycode_t keycode) {
+		return xcb_key_symbols_get_keysym(conn.keysyms(), keycode, 0);
 	}
 
+
+
+	/*
+		Grab all of the keys we want to receive events for. The keys we care about
+		are defined in the `keys` array we pass in.
+
+		We grab keys in a way that lets them work regardless of currently
+		active modifiers such as caps lock, scroll lock and num lock.
+
+		example:
+			register_keybindings(conn, keys);
+	*/
+	template <size_t N>
+	inline void register_keybindings(fluke::Connection& conn, const fluke::Keys<N>& keys) {
+		// Toggleable modifiers.
+		constexpr std::array modifiers{
+			uint32_t{0},
+			uint32_t{fluke::XCB_MASK_CAPS_LOCK},
+			uint32_t{fluke::XCB_MASK_NUM_LOCK},
+			uint32_t{fluke::XCB_MASK_SCROLL_LOCK},
+		};
+
+		// Get every combination of modifiers.
+		std::vector<uint32_t> modifiers_combinations;
+
+		// This is a bit untidy but it produces every combination of modifiers.
+		for (auto a: modifiers) {
+			for (auto b: modifiers) {
+				for (auto c: modifiers) {
+					modifiers_combinations.emplace_back( a | b | c );
+				}
+			}
+		}
+
+		// Ungrab any keys which are already grabbed.
+		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), fluke::XCB_MASK_ANY);
+
+		// Register our keybindings.
+		for (auto& [key_mod, key_keysym, key_func, key_arg]: keys) {
+			for (auto& keycode: fluke::get_keycodes(conn, key_keysym)) {
+				// Register the keybind under every modifier in the above structure.
+				// This is so that our keybinding can work while various "locks" are
+				// active like caps lock.
+				// This will make X send us events for the registered bindings.
+				for (auto& mod: modifiers_combinations)
+					fluke::grab_key(conn, true, conn.root(), key_mod | mod, keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+			}
+		}
+	}
 }
 

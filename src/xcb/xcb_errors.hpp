@@ -176,7 +176,7 @@ namespace fluke {
 
 	constexpr const char* event_str[] = {
 		"ERROR",
-		"SUCCESS"
+		"SUCCESS",
 		"XCB_KEY_PRESS",
 		"XCB_KEY_RELEASE",
 		"XCB_BUTTON_PRESS",
