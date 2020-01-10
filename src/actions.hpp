@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <fluke.hpp>
 
 namespace fluke {
@@ -75,9 +76,77 @@ namespace fluke {
 
 
 	// Alt tab like focusing
-	void action_focus_dir(fluke::Connection& conn, const std::vector<int>& arg) {
+	enum {
+		FOCUS_LEFT,
+		FOCUS_RIGHT,
+		FOCUS_UP,
+		FOCUS_DOWN,
+	};
 
+	void action_focus_dir(fluke::Connection& conn, const std::vector<int>& args) {
+		auto dir = args.at(0);
+
+		auto windows = fluke::get_mapped_windows(conn);
+
+		int i = 0;
+		auto geoms = fluke::dispatch_consume(conn, [&i, &conn] (xcb_window_t win) {
+			i++;
+			return fluke::get_geometry( conn, win );
+		}, windows);
+
+
+		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
+
+		auto&& focused_geom = geoms.at(i - 1);
+
+		std::pair<int, int> point;
+
+		switch (dir) {
+			case FOCUS_LEFT:
+				point = { focused_geom->x, focused_geom->y + focused_geom->height / 2 };
+				break;
+
+			case FOCUS_RIGHT:
+				point = { focused_geom->x + focused_geom->width, focused_geom->y + focused_geom->height / 2 };
+				break;
+
+			case FOCUS_UP:
+				point = { focused_geom->x + focused_geom->width / 2, focused_geom->y };
+				break;
+
+			case FOCUS_DOWN:
+				point = { focused_geom->x + focused_geom->width / 2, focused_geom->y + focused_geom->height };
+				break;
+		}
+
+
+		std::vector<std::pair<xcb_window_t, double>> dist;
+		for (auto [win, geom]: fluke::zip(windows, geoms)) {
+			if (win == focused)
+				continue;
+
+			auto x = geom->x + geom->width / 2;
+			auto y = geom->y + geom->height / 2;
+			auto d = std::sqrt(std::pow(x - point.first, 2) + std::pow(y - point.second, 2));
+			dist.emplace_back(win, d);
+		}
+
+		std::sort(dist.begin(), dist.end(), [] (const auto& a, const auto& b) {
+			return a.second < b.second;
+		});
+
+		auto [next_win, d] = dist.front();
+
+		fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_INACTIVE);
+		fluke::change_window_attributes(conn, next_win, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_ACTIVE);
+
+		// Put focused window on top of the stack.
+		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+
+		// Set input focus to new window.
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, next_win);
 	}
+
 
 
 	enum {
@@ -114,23 +183,6 @@ namespace fluke {
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, next_win);
 	}
 
-	// void action_focus_prev(fluke::Connection& conn, const std::vector<int>&) {
-	// 	xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
-	// 	auto windows = fluke::get_mapped_windows(conn);
-
-	// 	int i = 0;
-	// 	for (; windows.at(i) != focused; i++) {}
-
-	// 	xcb_window_t next_win = windows.at((i - 1) % windows.size());
-
-	// 	fluke::change_window_attributes(conn, next_win, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_ACTIVE);
-	// 	fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_INACTIVE);
-
-	// 	fluke::configure_window(conn, windows.front(), XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
-	// 	fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
-
-	// 	fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, next_win);
-	// }
 
 
 

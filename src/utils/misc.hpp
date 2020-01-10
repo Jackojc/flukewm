@@ -47,7 +47,7 @@ namespace fluke {
 		argument remain constant for all requests.
 
 		example:
-			dispatch_consume(conn, [] (auto&& win, auto&&... args) {
+			dispatch_consume(conn, [] (auto win, auto&&... args) {
 				return fluke::get_window_attributes( args..., win );
 			}, windows);
 	*/
@@ -263,7 +263,7 @@ namespace fluke {
 	// template <typename T>
 	// inline auto get_focused_display_for_geometry(fluke::Connection& conn, const T& geom) {
 	// 	auto crtcs = fluke::get_crtcs(conn);
-	// 	auto&& disp_ret = crtcs.front();
+	// 	auto disp_ret = crtcs.front();
 
 	// 	auto win_x = geom->x;
 	// 	auto win_y = geom->y;
@@ -273,7 +273,7 @@ namespace fluke {
 	// 	auto center_x = win_x + (win_width / 2);
 	// 	auto center_y = win_y + (win_height / 2);
 
-	// 	for (auto&& disp: crtcs) {
+	// 	for (auto disp: crtcs) {
 	// 		auto disp_x = disp->x;
 	// 		auto disp_y = disp->y;
 	// 		auto disp_width = disp->width;

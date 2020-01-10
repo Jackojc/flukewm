@@ -140,13 +140,13 @@ namespace fluke {
 
 
 	// Helper function
-	// for (auto&& [a, b, c]: zip(d, e, f))
+	// for (auto [a, b, c]: zip(d, e, f))
 	template <typename T, typename... Ts>
 	auto zip(T&& first, Ts&&... args) {
 		// Make sure all containers are the same size.
 		if constexpr(sizeof...(Ts) != 0) {
 			using std::size;  // trick for ADL allowing custom size functions to be used.
-			static_assert(((size(first) != size(args)) or ...), "containers are not all the same size!");
+			// static_assert(((size(first) != size(args)) or ...), "containers are not all the same size!");
 		}
 
 		return zipper<T, Ts...>{std::forward<T>(first), std::forward<Ts>(args)...};

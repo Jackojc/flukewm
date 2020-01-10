@@ -89,7 +89,7 @@ namespace fluke {
 		if (fluke::get(conn, fluke::get_window_attributes(conn, win))->override_redirect)
 			return;
 
-		auto&& [cursor, geom] = fluke::get(conn,
+		auto [cursor, geom] = fluke::get(conn,
 			fluke::query_pointer(conn, conn.root()),
 			fluke::get_geometry(conn, win)
 		);
@@ -145,6 +145,8 @@ namespace fluke {
 	inline void event_unmap_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::UnmapNotifyEvent>(std::move(e_));
 		xcb_window_t win = e->window;
+
+		fluke::on_unmap(conn);
 
 		print_event_name("UNMAP_NOTIFY", win);
 
