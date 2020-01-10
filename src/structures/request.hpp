@@ -78,6 +78,7 @@ namespace fluke {
 	SET_REQUEST(UnmapWindow,            unmap_window)
 	SET_REQUEST(GrabKey,                grab_key)
 	SET_REQUEST(UngrabKey,              ungrab_key)
+	SET_REQUEST(SendEvent,              send_event)
 
 
 
@@ -242,5 +243,12 @@ namespace fluke {
 	inline UngrabKeyCookie ungrab_key(fluke::Connection& conn, xcb_keycode_t key, xcb_window_t grab_window, uint16_t modifiers) {
 		return xcb_ungrab_key(conn, key, grab_window, modifiers);
 	}
+
+
+	template <typename T>
+	inline SendEventCookie send_event(fluke::Connection& conn, bool propagate, xcb_window_t win, uint32_t event_mask, T event) {
+		return xcb_send_event(conn, propagate, win, event_mask, reinterpret_cast<const char*>(event));
+	}
+
 }
 

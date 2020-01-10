@@ -21,12 +21,13 @@ namespace fluke {
 		auto e = fluke::event_cast<fluke::EnterNotifyEvent>(std::move(e_));
 		xcb_window_t win = e->event;
 
+		if (e->mode != XCB_NOTIFY_MODE_NORMAL and e->mode != XCB_NOTIFY_MODE_UNGRAB)
+			return;
+
 		fluke::on_hover_in(conn);
 
 		print_event_name("ENTER_NOTIFY", win);
 
-		if (e->mode != XCB_NOTIFY_MODE_NORMAL and e->mode != XCB_NOTIFY_MODE_UNGRAB)
-			return;
 
 		// set input focus to new window, set borders and stacking order.
 		if constexpr(fluke::config::MOUSE_FOCUS)
@@ -58,8 +59,8 @@ namespace fluke {
 
 		print_event_name("FOCUS_IN", win);
 
-		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		// fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
+		// fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 	}
 
 
@@ -72,7 +73,7 @@ namespace fluke {
 
 		print_event_name("FOCUS_OUT", win);
 
-		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
+		// fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
 	}
 
 
@@ -184,19 +185,18 @@ namespace fluke {
 
 		print_event_name("KEYPRESS", XCB_NONE);
 
-		// Find `fluke::Key` structure which has a matching keysym.
-		auto it = std::find_if(fluke::config::keys.begin(), fluke::config::keys.end(), [&keysym] (const auto& key) {
-			return key.keysym == keysym;
-		});
+
+		constexpr auto clean = [] (unsigned mask) {
+			return mask & ~(fluke::XCB_MASK_CAPS_LOCK | fluke::XCB_MASK_NUM_LOCK | fluke::XCB_MASK_SCROLL_LOCK);
+		};
 
 
-		// Run the callback if one is found.
-		if (it != fluke::config::keys.end()) {
-			auto& [mod, sym, func, args] = *it;
-			func(conn, args);
-
-		} else {
-			FLUKE_DEBUG( tinge::warnln("no callback was found for key.") )
+		// Find `fluke::Key` structure which has a matching keysym and modifier.
+		for (auto& [mod, sym, func, args]: fluke::config::keys) {
+			if (keysym == sym and clean(mod) == clean(e->state)) {
+				func(conn, args);
+				return;
+			}
 		}
 	}
 

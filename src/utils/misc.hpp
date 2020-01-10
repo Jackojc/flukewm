@@ -159,33 +159,6 @@ namespace fluke {
 
 
 	/*
-		Gain control of windows which were already open before the window manager was started
-		so that we can receive events for them.
-
-		example:
-			adopt_orphans(conn);
-	*/
-	inline void adopt_orphans(fluke::Connection& conn) {
-		// For every mapped window, tell it what events we wish to receive from it
-		// and also set the border colour and width of the window.
-		for (xcb_window_t win: fluke::get_mapped_windows(conn)) {
-			fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
-			fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, config::BORDER_SIZE);
-			fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
-		}
-
-		// Get the window which currently has keyboard focus
-		// (if no window is focused an error will be generated but we just ignore it)
-		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
-
-		// Set the stacking mode, border width and border colour for the focused window.
-		fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, config::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
-		fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
-	}
-
-
-
-	/*
 		Returns a vector of xcb_randr_provider_t which contains all of the known providers.
 
 		example:
@@ -388,10 +361,13 @@ namespace fluke {
 		for (auto a: modifiers) {
 			for (auto b: modifiers) {
 				for (auto c: modifiers) {
-					modifiers_combinations.emplace_back( a | b | c );
+					modifiers_combinations.emplace_back( a | b | c);
 				}
 			}
 		}
+
+		// tinge::println(keys.size());
+		// tinge::println(modifiers_combinations.size());
 
 		// Ungrab any keys which are already grabbed.
 		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), fluke::XCB_MASK_ANY);
