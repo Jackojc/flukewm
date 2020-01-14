@@ -88,7 +88,7 @@ namespace fluke {
 
 		auto windows = fluke::get_mapped_windows(conn);
 
-		int i = 0;
+		decltype(windows)::size_type i = 0;
 		auto geoms = fluke::dispatch_consume(conn, [&i, &conn] (xcb_window_t win) {
 			i++;
 			return fluke::get_geometry( conn, win );
@@ -128,6 +128,7 @@ namespace fluke {
 			auto x = geom->x + geom->width / 2;
 			auto y = geom->y + geom->height / 2;
 			auto d = std::sqrt(std::pow(x - point.first, 2) + std::pow(y - point.second, 2));
+
 			dist.emplace_back(win, d);
 		}
 
@@ -137,11 +138,11 @@ namespace fluke {
 
 		auto [next_win, d] = dist.front();
 
-		fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_INACTIVE);
-		fluke::change_window_attributes(conn, next_win, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_ACTIVE);
+		// fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_INACTIVE);
+		// fluke::change_window_attributes(conn, next_win, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_ACTIVE);
 
 		// Put focused window on top of the stack.
-		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		// fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 
 		// Set input focus to new window.
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, next_win);
@@ -159,28 +160,34 @@ namespace fluke {
 
 		// Get focused window aswell as all mapped windows.
 		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
+
 		auto windows = fluke::get_mapped_windows(conn);
 
 		// Find index of focused window in windows vector.
-		int i = 0;
-		for (; windows.at(i) != focused; i++) {}
+		auto i = static_cast<decltype(windows)::size_type>(
+			std::distance(windows.begin(), std::find(windows.begin(), windows.end(), focused)) + dir
+		);
 
-		// Get the next window in the list (using modulus to make it circular)
-		xcb_window_t next_win = windows.at((i + dir) % windows.size());
+		// // Get the next window in the list (using modulus to make it circular)
+		xcb_window_t next_win = windows.at(i % windows.size());
 
-		// Set border colours.
-		fluke::change_window_attributes(conn, next_win, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_ACTIVE);
-		fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_INACTIVE);
+
+		// windows.erase(std::remove(windows.begin(), windows.end(), focused), windows.end());
+
+
+		// for (xcb_window_t win: windows) {
+		// 	fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
+		// }
+		// conn.sync();
+
 
 		// Rotate stack of windows by 1.
-		auto rotated_win = (dir == FOCUS_NEXT) ? windows.back() : windows.front();
-		fluke::configure_window(conn, rotated_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
-
-		// Put focused window on top of the stack.
-		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
 
 		// Set input focus to new window.
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, next_win);
+
+		// conn.flush();
 	}
 
 

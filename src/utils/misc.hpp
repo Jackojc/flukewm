@@ -22,6 +22,12 @@ namespace fluke {
 	#endif
 
 
+	#define FLUKE_DEBUG_NOTICE(...) FLUKE_DEBUG( tinge::noticeln(__VA_ARGS__) )
+	#define FLUKE_DEBUG_WARN(...) FLUKE_DEBUG( tinge::warnln(__VA_ARGS__) )
+	#define FLUKE_DEBUG_ERROR(...) FLUKE_DEBUG( tinge::errorln(__VA_ARGS__) )
+	#define FLUKE_DEBUG_SUCCESS(...) FLUKE_DEBUG( tinge::successln(__VA_ARGS__) )
+
+
 
 	/*
 		Converts a numeric argument to hexadecimal format with 0x prepended.
@@ -145,10 +151,13 @@ namespace fluke {
 		// We use `i` to allow indexing `attrs` while simultaneously indexing `windows`.
 		decltype(attrs)::size_type i = 0;
 
+
 		// Remove windows which have override_redirect set and are unmapped,
 		// they have asked to not be managed by the window manager.
-		const auto pred = [&attrs, &i] (xcb_window_t) {
-			return attrs[i]->override_redirect and not(attrs[i++]->map_state == XCB_MAP_STATE_VIEWABLE);
+		const auto pred = [&attrs, &i] (xcb_window_t win) {
+			bool ret = attrs[i]->override_redirect or attrs[i]->map_state != XCB_MAP_STATE_VIEWABLE;
+			i++;
+			return ret;
 		};
 
 		windows.erase(std::remove_if(windows.begin(), windows.end(), pred), windows.end());
@@ -301,14 +310,14 @@ namespace fluke {
 	*/
 	auto get_keycodes(fluke::Connection& conn, xcb_keysym_t sym) {
 		// Get a pointer to an array of keycodes.
-		auto keycode_ptr = std::unique_ptr<xcb_keycode_t, decltype(&std::free)>{
+		auto keycode_ptr = std::unique_ptr<xcb_keycode_t[], decltype(&std::free)>{
 			xcb_key_symbols_get_keycode(conn.keysyms(), sym), &std::free
 		};
 
 		// The array we got above is terminated with `XCB_NO_SYMBOL`.
 		// Find the length of the array.
-		int count = 0;
-		while (keycode_ptr.get()[count] != XCB_NO_SYMBOL)
+		size_t count = 0;
+		while (keycode_ptr[count] != XCB_NO_SYMBOL)
 			count++;
 
 		// Use pointer + length to create a vector.
@@ -365,9 +374,6 @@ namespace fluke {
 				}
 			}
 		}
-
-		// tinge::println(keys.size());
-		// tinge::println(modifiers_combinations.size());
 
 		// Ungrab any keys which are already grabbed.
 		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), fluke::XCB_MASK_ANY);

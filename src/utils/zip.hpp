@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <iterator>
@@ -146,7 +147,8 @@ namespace fluke {
 		// Make sure all containers are the same size.
 		if constexpr(sizeof...(Ts) != 0) {
 			using std::size;  // trick for ADL allowing custom size functions to be used.
-			// static_assert(((size(first) != size(args)) or ...), "containers are not all the same size!");
+			if (((size(first) != size(args)) or ...))
+				throw std::length_error("containers differ in size!");
 		}
 
 		return zipper<T, Ts...>{std::forward<T>(first), std::forward<Ts>(args)...};
