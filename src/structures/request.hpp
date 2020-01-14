@@ -62,6 +62,7 @@ namespace fluke {
 	GET_REQUEST(GetInputFocus,                  get_input_focus)
 	GET_REQUEST(QueryTree,                      query_tree)
 	GET_REQUEST(QueryPointer,                   query_pointer)
+	GET_REQUEST(QueryExtension,                 query_extension)
 	GET_REQUEST(RandrGetProviders,              randr_get_providers)
 	GET_REQUEST(RandrGetProviderInfo,           randr_get_provider_info)
 	GET_REQUEST(RandrGetOutputInfo,             randr_get_output_info)
@@ -79,6 +80,7 @@ namespace fluke {
 	SET_REQUEST(GrabKey,                grab_key)
 	SET_REQUEST(UngrabKey,              ungrab_key)
 	SET_REQUEST(SendEvent,              send_event)
+	SET_REQUEST(RandrSelectInput,       randr_select_input)
 
 
 
@@ -248,6 +250,11 @@ namespace fluke {
 	template <typename T>
 	inline SendEventCookie send_event(fluke::Connection& conn, bool propagate, xcb_window_t win, uint32_t event_mask, T event) {
 		return xcb_send_event(conn, propagate, win, event_mask, reinterpret_cast<const char*>(event));
+	}
+
+
+	inline RandrSelectInputCookie randr_select_input(fluke::Connection& conn, xcb_window_t win, uint16_t mask) {
+		return xcb_randr_select_input(conn, win, mask);
 	}
 
 }

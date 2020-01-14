@@ -55,6 +55,9 @@ namespace fluke {
 	using SelectionRequestEvent = std::unique_ptr<xcb_selection_request_event_t>;
 	using SelectionNotifyEvent = std::unique_ptr<xcb_selection_notify_event_t>;
 
+	using RandrScreenChangeNotifyEvent = std::unique_ptr<xcb_randr_screen_change_notify_event_t>;
+	using RandrNotifyEvent = std::unique_ptr<xcb_randr_notify_event_t>;
+
 	using GeEvent = std::unique_ptr<xcb_ge_generic_event_t>;
 	using Event = std::unique_ptr<xcb_generic_event_t>;
 

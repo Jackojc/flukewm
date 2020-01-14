@@ -46,6 +46,19 @@ int main() {
 
 
 
+	// Setup the randr extension to allow us to recieve display change events.
+	const auto randr_ext = xcb_get_extension_data(conn, &xcb_randr_id);
+	const auto randr_base = randr_ext->first_event;
+
+	fluke::randr_select_input(conn, conn.root(),
+		XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE   |
+		XCB_RANDR_NOTIFY_MASK_OUTPUT_CHANGE   |
+		XCB_RANDR_NOTIFY_MASK_CRTC_CHANGE     |
+		XCB_RANDR_NOTIFY_MASK_OUTPUT_PROPERTY
+	);
+
+
+
 	// Register to receive window manager events. Only one window manager can be active at one time.
 	FLUKE_DEBUG( tinge::successln("register as window manager") )
 	fluke::change_window_attributes(conn, conn.root(), XCB_CW_EVENT_MASK, fluke::XCB_WINDOWMANAGER_EVENTS);
@@ -84,6 +97,11 @@ int main() {
 
 
 
+	// Make sure we are synced up with X before we start handling events.
+	conn.sync();
+
+
+
 	// Set jump point, when a signal handler gets activated, it will jump here.
 	if (status = setjmp(exit_jump); status) {
 		FLUKE_DEBUG( tinge::warnln("jumping to exit") )
@@ -104,7 +122,9 @@ int main() {
 		NEW_HANDLER( XCB_MAP_REQUEST,       event_map_request       ) \
 		NEW_HANDLER( XCB_UNMAP_NOTIFY,      event_unmap_notify      ) \
 		NEW_HANDLER( XCB_CONFIGURE_REQUEST, event_configure_request ) \
-		NEW_HANDLER( XCB_KEY_PRESS,         event_keypress          )
+		NEW_HANDLER( XCB_KEY_PRESS,         event_keypress          ) \
+		NEW_HANDLER( XCB_PROPERTY_NOTIFY,   event_property_notify   ) \
+		NEW_HANDLER( XCB_CLIENT_MESSAGE,    event_client_message    )
 
 
 
@@ -117,10 +137,11 @@ int main() {
 			x = init;
 
 		for (auto [id, label]: args)
-			labels[static_cast<arr_t::size_type>(id)] = label;
+			labels.at(static_cast<arr_t::size_type>(id)) = label;
 
 		return labels;
 	};
+
 
 
 
@@ -162,7 +183,26 @@ int main() {
 
 	// Default handler.
 	unhandled_label:
-		FLUKE_DEBUG( tinge::warnln("unhandled event '", fluke::event_str[XCB_EVENT_RESPONSE_TYPE(old_event.get())], "'!") )
+		auto resp = XCB_EVENT_RESPONSE_TYPE(old_event.get());
+
+		if (resp == randr_base + XCB_RANDR_SCREEN_CHANGE_NOTIFY) {
+			fluke::event_randr_screen_change_notify(conn, std::move(old_event));
+
+		} else if (resp == randr_base + XCB_RANDR_NOTIFY) {
+			fluke::event_randr_notify(conn, std::move(old_event));
+
+		} else {
+			FLUKE_DEBUG_WARN( "unhandled event '", fluke::event_str[resp], "'!" )
+		}
+
+		old_event = next_event();
+		goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
+
+
+
+	// Unhandled randr events handler.
+	unhandled_randr_label:
+		FLUKE_DEBUG( tinge::warnln("unhandled randr event '", fluke::event_str[XCB_EVENT_RESPONSE_TYPE(old_event.get())], "'!") )
 		old_event = next_event();
 		goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
 

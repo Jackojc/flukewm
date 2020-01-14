@@ -308,7 +308,7 @@ namespace fluke {
 		example:
 			get_keycodes(conn, keysym);
 	*/
-	auto get_keycodes(fluke::Connection& conn, xcb_keysym_t sym) {
+	inline auto get_keycodes(fluke::Connection& conn, xcb_keysym_t sym) {
 		// Get a pointer to an array of keycodes.
 		auto keycode_ptr = std::unique_ptr<xcb_keycode_t[], decltype(&std::free)>{
 			xcb_key_symbols_get_keycode(conn.keysyms(), sym), &std::free
@@ -337,7 +337,7 @@ namespace fluke {
 		example:
 			get_keysym(conn, keycode);
 	*/
-	auto get_keysym(fluke::Connection& conn, xcb_keycode_t keycode) {
+	inline auto get_keysym(fluke::Connection& conn, xcb_keycode_t keycode) {
 		return xcb_key_symbols_get_keysym(conn.keysyms(), keycode, 0);
 	}
 

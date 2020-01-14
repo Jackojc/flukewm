@@ -174,6 +174,12 @@ namespace fluke {
 	};
 
 
+	constexpr const char* randr_event_str[] = {
+		"XCB_RANDR_SCREEN_CHANGE_NOTIFY",
+		"XCB_RANDR_NOTIFY"
+	};
+
+
 	constexpr const char* event_str[] = {
 		"ERROR",
 		"SUCCESS",

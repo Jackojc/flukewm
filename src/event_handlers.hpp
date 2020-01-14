@@ -41,8 +41,8 @@ namespace fluke {
 
 
 		// enable this to unfocus window when pointer is moved outside of any windows
-		if constexpr(not config::USE_LAZY_FOCUS)
-			fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, conn.root());
+		// if constexpr(not config::USE_LAZY_FOCUS)
+		// 	fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, conn.root());
 	}
 
 
@@ -50,6 +50,12 @@ namespace fluke {
 	inline void event_focus_in(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::FocusInEvent>(std::move(e_));
 		xcb_window_t win = e->event;
+
+		if (e->mode == XCB_NOTIFY_MODE_GRAB || e->mode == XCB_NOTIFY_MODE_UNGRAB
+			|| e->detail == XCB_NOTIFY_DETAIL_POINTER || e->detail == XCB_NOTIFY_DETAIL_POINTER_ROOT
+			|| e->detail == XCB_NOTIFY_DETAIL_NONE) {
+			return;
+		}
 
 		fluke::on_focus_in(conn);
 		FLUKE_DEBUG_NOTICE(
@@ -68,7 +74,7 @@ namespace fluke {
 		xcb_window_t win = e->event;
 
 		// This is needed to prevent border from flickering when moving/resizing with keybinds.
-		// if (e->mode == XCB_NOTIFY_MODE_GRAB or e->mode == XCB_NOTIFY_MODE_UNGRAB) return;
+		if (e->mode == XCB_NOTIFY_MODE_GRAB or e->mode == XCB_NOTIFY_MODE_UNGRAB) return;
 
 		fluke::on_focus_out(conn);
 		FLUKE_DEBUG_NOTICE(
@@ -113,13 +119,8 @@ namespace fluke {
 		auto x = static_cast<uint32_t>(std::clamp(cursor_x - w / 2, 0, screen_w - w - bw));
 		auto y = static_cast<uint32_t>(std::clamp(cursor_y - h / 2, 0, screen_h - h - bw));
 
-		// xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
-		// fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
-
-		// fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, config::BORDER_SIZE);
 		fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
 		fluke::configure_window(conn, win, fluke::XCB_MOVE_RESIZE | XCB_CONFIG_WINDOW_BORDER_WIDTH, x, y, w, h, config::BORDER_SIZE);
-		// fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, win);
 	}
 
 
@@ -140,8 +141,6 @@ namespace fluke {
 		if (windows.size() == 0)
 			return;
 
-		// fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
-		// fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, windows.front());
 	}
 
@@ -214,6 +213,42 @@ namespace fluke {
 
 
 
+	inline void event_property_notify(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::PropertyNotifyEvent>(std::move(e_));
+
+		fluke::on_property(conn);
+		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("PROPERTY_NOTIFY"), "'" )
+	}
+
+
+
+	inline void event_client_message(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::ClientMessageEvent>(std::move(e_));
+
+		fluke::on_client_message(conn);
+		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("CLIENT_MESSAGE"), "'" )
+	}
+
+
+
+	inline void event_randr_screen_change_notify(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::RandrScreenChangeNotifyEvent>(std::move(e_));
+
+		fluke::on_randr_screen_change(conn);
+		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("RANDR_SCREEN_CHANGE_NOTIFY"), "'" )
+	}
+
+
+
+	inline void event_randr_notify(fluke::Connection& conn, fluke::Event&& e_) {
+		auto e = fluke::event_cast<fluke::RandrNotifyEvent>(std::move(e_));
+
+		fluke::on_randr_notify(conn);
+		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("RANDR_NOTIFY"), "'" )
+	}
+
+
+
 	inline void event_keypress(fluke::Connection& conn, fluke::Event&& e_) {
 		auto e = fluke::event_cast<fluke::KeyPressEvent>(std::move(e_));
 		xcb_keysym_t keysym = fluke::get_keysym(conn, e->detail);
@@ -250,21 +285,21 @@ namespace fluke {
 		if (error_code == 3)
 			return;
 
-
 		fluke::on_error(conn);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("ERROR"), "'" )
 
-
+		// Make error names bright blue.
 		auto major = tinge::fg::bright::make_blue(fluke::request_str[e->major_code]);
 		auto error = tinge::fg::bright::make_blue(fluke::error_str[e->error_code]);
 		auto help  = fluke::help_str[e->error_code];
 
+		// Make error codes dim blue.
 		auto major_code_str = tinge::fg::dim::make_blue(e->major_code);
 		auto minor_code_str = tinge::fg::dim::make_blue(e->minor_code);
 		auto error_code_str = tinge::fg::dim::make_blue(e->error_code);
 
+		// Pretty string with all error codes concatenated.
 		auto all_codes_str = tinge::strcat("major(", major_code_str, "), minor(", minor_code_str, "), error(", error_code_str, ")");
-
 
 		// Print the error with some formatting and colours. A bit messy...
 		tinge::errorln(

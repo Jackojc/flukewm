@@ -18,7 +18,7 @@ namespace fluke::config {
 	// This flag makes it so that if the cursor moves off a window
 	// and onto the root window, do not unfocus the window.
 	// Otherwise, the focus would be switched to the root window.
-	constexpr bool USE_LAZY_FOCUS = true;
+	constexpr bool USE_LAZY_FOCUS = false;
 
 
 	// This will lock the cursor to the bounds of the focused
@@ -116,6 +116,15 @@ namespace fluke {
 	// Called when an error occurs.
 	void on_error(fluke::Connection& conn) {}
 
+
+	// These are usually called when anything EWMH happens.
+	void on_property(fluke::Connection& conn) {}
+	void on_client_message(fluke::Connection& conn) {}
+
+
+	// Randr/screen hooks.
+	void on_randr_screen_change(fluke::Connection& conn) {}
+	void on_randr_notify(fluke::Connection& conn) {}
 }
 
 
