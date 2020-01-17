@@ -20,7 +20,7 @@ namespace fluke {
 		)
 
 
-		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
+		xcb_window_t focused = fluke::get_focused_window(conn);
 
 		auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
@@ -96,7 +96,7 @@ namespace fluke {
 		)
 
 		// Get the window which currently has keyboard focus.
-		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
+		xcb_window_t focused = fluke::get_focused_window(conn);
 
 		// Vector of all windows currently mapped.
 		auto windows = fluke::get_mapped_windows(conn);
@@ -201,7 +201,7 @@ namespace fluke {
 			return;
 
 		// Get the currently focused window.
-		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
+		xcb_window_t focused = fluke::get_focused_window(conn);
 
 
 		// Depending on which direction we are focusing, we need to use
@@ -252,7 +252,7 @@ namespace fluke {
 
 
 		// Get focused window ID and its rect.
-		xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
+		xcb_window_t focused = fluke::get_focused_window(conn);
 		auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
 		// Get the rect of the nearest display to the focused window.

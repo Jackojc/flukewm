@@ -387,5 +387,17 @@ namespace fluke {
 			}
 		}
 	}
+
+
+
+	/*
+		This function returns the currently focused window ID.
+
+		example:
+			get_focused_window(conn);
+	*/
+	inline auto get_focused_window(fluke::Connection& conn) {
+		return fluke::get(conn, fluke::get_input_focus(conn))->focus;
+	}
 }
 

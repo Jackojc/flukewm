@@ -80,7 +80,7 @@ int main() {
 
 	// Get the window which currently has keyboard focus
 	// (if no window is focused an error will be generated but we just ignore it)
-	xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
+	xcb_window_t focused = fluke::get_focused_window(conn);
 
 	// Set the stacking mode, border width and border colour for the focused window.
 	fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, fluke::config::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
