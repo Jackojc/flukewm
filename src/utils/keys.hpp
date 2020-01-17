@@ -6,13 +6,12 @@
 
 namespace fluke {
 
-	using KeyCallback = void(*)(fluke::Connection&, const std::vector<int>&);
+	using KeyCallback = void(*)(fluke::Connection&);
 
 	struct Key {
 		unsigned mod;
 		xcb_keysym_t keysym;
 		fluke::KeyCallback func;
-		std::vector<int> arg;
 	};
 
 

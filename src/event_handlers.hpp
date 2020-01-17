@@ -63,7 +63,7 @@ namespace fluke {
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		// fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
 	}
 
@@ -91,7 +91,7 @@ namespace fluke {
 		auto e = fluke::event_cast<fluke::CreateNotifyEvent>(std::move(e_));
 		xcb_window_t win = e->window;
 
-		if (fluke::get(conn, fluke::get_window_attributes(conn, win))->override_redirect)
+		if (fluke::is_ignored(fluke::get(conn, fluke::get_window_attributes(conn, win))))
 			return;
 
 		fluke::on_create(conn);
@@ -106,8 +106,8 @@ namespace fluke {
 			fluke::get_geometry(conn, win)
 		);
 
-		auto cursor_x = cursor->root_x;
-		auto cursor_y = cursor->root_y;
+		auto [cursor_x, cursor_y] = fluke::as_point(cursor);
+
 		auto w = geom->width;
 		auto h = geom->height;
 		auto bw = geom->border_width;
@@ -141,7 +141,8 @@ namespace fluke {
 		if (windows.size() == 0)
 			return;
 
-		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, windows.front());
+		fluke::configure_window(conn, windows.front(), XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, windows.back());
 	}
 
 
@@ -156,15 +157,8 @@ namespace fluke {
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
-		// if (fluke::get(conn, fluke::get_window_attributes(conn, win))->override_redirect)
-		// 	return;
-
-		// xcb_window_t focused = fluke::get(conn, fluke::get_input_focus(conn))->focus;
-		// fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_INACTIVE);
-
-		// fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
-		// fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::map_window(conn, win);
+		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
@@ -236,6 +230,8 @@ namespace fluke {
 
 		fluke::on_randr_screen_change(conn);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("RANDR_SCREEN_CHANGE_NOTIFY"), "'" )
+
+		// move windows that are off screen back into view.
 	}
 
 
@@ -263,9 +259,9 @@ namespace fluke {
 
 
 		// Find `fluke::Key` structure which has a matching keysym and modifier.
-		for (auto& [mod, sym, func, args]: fluke::config::keys) {
+		for (auto& [mod, sym, func]: fluke::config::keys) {
 			if (keysym == sym and clean(mod) == clean(e->state)) {
-				func(conn, args);
+				func(conn);
 				return;
 			}
 		}
