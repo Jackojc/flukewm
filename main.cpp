@@ -65,13 +65,8 @@ int main() {
 
 
 
-	/*
-		Gain control of windows which were already open before the window manager was started
-		so that we can receive events for them.
-
-		example:
-			adopt_orphans(conn);
-	*/
+	// Gain control of windows which were already open before the window manager was started
+	// so that we can receive events for them.
 	FLUKE_DEBUG( tinge::successln("adopt orphans") )
 
 	// For every mapped window, tell it what events we wish to receive from it
@@ -81,6 +76,7 @@ int main() {
 		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, fluke::config::BORDER_SIZE);
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_INACTIVE);
 	}
+
 
 	// Get the window which currently has keyboard focus
 	// (if no window is focused an error will be generated but we just ignore it)
@@ -141,7 +137,6 @@ int main() {
 
 		return labels;
 	};
-
 
 
 

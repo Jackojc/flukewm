@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include <cmath>
 #include <fluke.hpp>
 
 
@@ -120,11 +121,11 @@ namespace fluke {
 
 		// Remove windows which have override_redirect set, they have asked to
 		// not be managed by the window manager.
-		const auto pred = [&attrs, &i] (xcb_window_t) {
-			return attrs[i++]->override_redirect;
+		const auto should_remove = [&attrs, &i] (xcb_window_t) {
+			return fluke::is_ignored(attrs[i++]);
 		};
 
-		windows.erase(std::remove_if(windows.begin(), windows.end(), pred), windows.end());
+		windows.erase(std::remove_if(windows.begin(), windows.end(), should_remove), windows.end());
 
 		return windows;
 	}
@@ -151,16 +152,14 @@ namespace fluke {
 		// We use `i` to allow indexing `attrs` while simultaneously indexing `windows`.
 		decltype(attrs)::size_type i = 0;
 
-
 		// Remove windows which have override_redirect set and are unmapped,
 		// they have asked to not be managed by the window manager.
-		const auto pred = [&attrs, &i] (xcb_window_t win) {
-			bool ret = attrs[i]->override_redirect or attrs[i]->map_state != XCB_MAP_STATE_VIEWABLE;
-			i++;
-			return ret;
+		const auto should_remove = [&attrs, &i] (xcb_window_t win) {
+			const auto& attr = attrs[i++];
+			return fluke::is_ignored(attr) or not fluke::is_mapped(attr);
 		};
 
-		windows.erase(std::remove_if(windows.begin(), windows.end(), pred), windows.end());
+		windows.erase(std::remove_if(windows.begin(), windows.end(), should_remove), windows.end());
 
 		return windows;
 	}
@@ -249,7 +248,7 @@ namespace fluke {
 
 		// Remove disconnected displays.
 		output_info.erase(std::remove_if(output_info.begin(), output_info.end(), [] (const auto& info) {
-			return info->connection == XCB_RANDR_CONNECTION_DISCONNECTED or info->crtc == XCB_NONE;
+			return not fluke::is_connected(info) or info->crtc == XCB_NONE;
 		}), output_info.end());
 
 
@@ -264,41 +263,39 @@ namespace fluke {
 
 
 	/*
-		Get the display which the window geometry is on.
+		Find the rect of a display which is nearest to provided rect.
+		Can be used to find the display that a window is on for example.
 
 		example:
-			get_focused_display(conn);
+			get_nearest_display_rect(conn, rect);
 	*/
-	// template <typename T>
-	// inline auto get_focused_display_for_geometry(fluke::Connection& conn, const T& geom) {
-	// 	auto crtcs = fluke::get_crtcs(conn);
-	// 	auto disp_ret = crtcs.front();
+	inline fluke::Rect get_nearest_display_rect(fluke::Connection& conn, const fluke::Rect& r) {
+		// Destructure rect argument.
+		auto [x_, y_, w_, h_] = r;
 
-	// 	auto win_x = geom->x;
-	// 	auto win_y = geom->y;
-	// 	auto win_width = geom->width;
-	// 	auto win_height = geom->height;
+		// Get center of rect argument.
+		fluke::Point center{ x_ + w_ / 2, y_ + h_ / 2 };
 
-	// 	auto center_x = win_x + (win_width / 2);
-	// 	auto center_y = win_y + (win_height / 2);
+		// Store distances to rects and the associated rect itself.
+		std::vector<std::pair<fluke::Rect, int>> distances;
 
-	// 	for (auto disp: crtcs) {
-	// 		auto disp_x = disp->x;
-	// 		auto disp_y = disp->y;
-	// 		auto disp_width = disp->width;
-	// 		auto disp_height = disp->height;
+		// Distance algorithm.
+		// Compare center of display to center of rect argument.
+		const auto distance = [&center] (const fluke::Point& p) {
+			return std::sqrt(std::pow(center.x - p.x, 2) + std::pow(center.y - p.y, 2));
+		};
 
-	// 		bool on_display =
-	// 			center_x >= disp_x and
-	// 			center_y >= disp_y and
-	// 			center_x <= (disp_x + disp_width) and
-	// 			center_y <= (disp_y + disp_height);
+		// Loop over all displays and get its distance to `center`.
+		for (auto& disp: fluke::get_crtcs(conn)) {
+			auto [x, y, w, h] = fluke::as_rect(disp);
+			distances.emplace_back(fluke::Rect{x, y, w, h}, distance(fluke::Point{ x + w / 2, y + h / 2 }));
+		}
 
-	// 		return std::move(disp);
-	// 	}
-
-	// 	return std::move(disp_ret);
-	// }
+		// Find rect which is nearest and return it.
+		return std::min_element(distances.begin(), distances.end(), [] (const auto& a, const auto& b) {
+			return a.second < b.second;
+		})->first;
+	}
 
 
 
@@ -379,7 +376,7 @@ namespace fluke {
 		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), fluke::XCB_MASK_ANY);
 
 		// Register our keybindings.
-		for (auto& [key_mod, key_keysym, key_func, key_arg]: keys) {
+		for (auto& [key_mod, key_keysym, key_func]: keys) {
 			for (auto& keycode: fluke::get_keycodes(conn, key_keysym)) {
 				// Register the keybind under every modifier in the above structure.
 				// This is so that our keybinding can work while various "locks" are
