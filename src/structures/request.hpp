@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <cstdlib>
 #include <fluke.hpp>
@@ -40,8 +41,9 @@ namespace fluke {
 			template <typename... Ts> constexpr name##Cookie(cookie_t cookie_): \
 				Cookie::Cookie{cookie_} {} \
 		}; \
+		using name##Reply = std::unique_ptr<xcb_##type##_reply_t, decltype(&std::free)>; \
 		inline auto get(fluke::Connection& conn, const name##Cookie& cookie) { \
-			return std::unique_ptr<xcb_##type##_reply_t, decltype(&std::free)>{xcb_##type##_reply(conn, cookie, nullptr), std::free}; \
+			return name##Reply{xcb_##type##_reply(conn, cookie, nullptr), std::free}; \
 		}
 
 
@@ -123,7 +125,15 @@ namespace fluke {
 	}
 
 
-	inline GetPropertyCookie get_property(fluke::Connection& conn, bool delete_, xcb_window_t win, xcb_atom_t property, xcb_atom_t type, uint32_t long_offset, uint32_t long_length) {
+	inline GetPropertyCookie get_property(
+		fluke::Connection& conn,
+		bool delete_,
+		xcb_window_t win,
+		xcb_atom_t property,
+		xcb_atom_t type,
+		uint32_t long_offset,
+		uint32_t long_length
+	) {
 		return xcb_get_property_unchecked(conn, delete_, win, property, type, long_offset, long_length);
 	}
 
@@ -172,7 +182,9 @@ namespace fluke {
 	}
 
 
-	inline RandrGetScreenResourcesCurrentCookie randr_get_screen_resources_current(fluke::Connection& conn, xcb_window_t win) {
+	inline RandrGetScreenResourcesCurrentCookie randr_get_screen_resources_current(
+		fluke::Connection& conn, xcb_window_t win
+	) {
 		return xcb_randr_get_screen_resources_current_unchecked(conn, win);
 	}
 
@@ -184,12 +196,19 @@ namespace fluke {
 
 	// Setter functions
 	template <typename T, typename... Ts>
-	inline ConfigureWindowCookie configure_window(fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args) {
-		uint32_t values[] = { std::forward<T>(arg), std::forward<Ts>(args)... };
+	inline ConfigureWindowCookie configure_window(
+		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args
+	) {
+		uint32_t values[] = {
+			static_cast<uint32_t>(std::forward<T>(arg)),
+			static_cast<uint32_t>(std::forward<Ts>(args))...
+		};
 		return xcb_configure_window(conn, win, value_mask, values);
 	}
 
-	inline ConfigureWindowCookie configure_window(fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args) {
+	inline ConfigureWindowCookie configure_window(
+		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args
+	) {
 		return xcb_configure_window(conn, win, value_mask, args);
 	}
 
@@ -198,12 +217,19 @@ namespace fluke {
 
 
 	template <typename T, typename... Ts>
-	inline ChangeWindowAttributesCookie change_window_attributes(fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args) {
-		uint32_t values[] = { std::forward<T>(arg), std::forward<Ts>(args)... };
+	inline ChangeWindowAttributesCookie change_window_attributes(
+		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args
+	) {
+		uint32_t values[] = {
+			static_cast<uint32_t>(std::forward<T>(arg)),
+			static_cast<uint32_t>(std::forward<Ts>(args))...
+		};
 		return xcb_change_window_attributes(conn, win, value_mask, values);
 	}
 
-	inline ChangeWindowAttributesCookie change_window_attributes(fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args) {
+	inline ChangeWindowAttributesCookie change_window_attributes(
+		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args
+	) {
 		return xcb_change_window_attributes(conn, win, value_mask, args);
 	}
 
@@ -256,6 +282,62 @@ namespace fluke {
 	inline RandrSelectInputCookie randr_select_input(fluke::Connection& conn, xcb_window_t win, uint16_t mask) {
 		return xcb_randr_select_input(conn, win, mask);
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// Convenience functions
+	inline auto as_rect(const GetGeometryReply& geom) {
+		return fluke::Rect{
+			geom->x,
+			geom->y,
+			geom->width,
+			geom->height
+		};
+	}
+
+	inline auto as_rect(const RandrGetCrtcInfoReply& crtc) {
+		return fluke::Rect{
+			crtc->x,
+			crtc->y,
+			crtc->width,
+			crtc->height
+		};
+	}
+
+
+	inline auto as_point(const QueryPointerReply& pointer) {
+		return fluke::Point{
+			pointer->root_x,
+			pointer->root_y
+		};
+	}
+
+
+	inline bool is_ignored(const GetWindowAttributesReply& attr) {
+		return attr->override_redirect;
+	}
+
+
+	inline bool is_mapped(const GetWindowAttributesReply& attr) {
+		return attr->map_state == XCB_MAP_STATE_VIEWABLE;
+	}
+
+
+	inline bool is_connected(const RandrGetOutputInfoReply& info) {
+		return info->connection == XCB_RANDR_CONNECTION_CONNECTED;
+	}
+
 
 }
 
