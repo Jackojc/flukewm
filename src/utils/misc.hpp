@@ -133,7 +133,7 @@ namespace fluke {
 
 		// Remove windows which have override_redirect set and are unmapped,
 		// they have asked to not be managed by the window manager.
-		const auto should_remove = [&attrs, &i] (xcb_window_t win) {
+		const auto should_remove = [&attrs, &i] (xcb_window_t) {
 			const auto& attr = attrs[i++];
 			return fluke::is_ignored(attr) or not fluke::is_mapped(attr);
 		};

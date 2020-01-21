@@ -33,11 +33,11 @@ namespace fluke {
 
 
 	// Change workspace
-	inline void action_workspace_change(fluke::Connection& conn, const std::vector<int>& arg) {
+	inline void action_workspace_change(fluke::Connection&) {
 
 	}
 
-	inline void action_workspace_send_to(fluke::Connection& conn, const std::vector<int>& arg) {
+	inline void action_workspace_send_to(fluke::Connection&) {
 
 	}
 
@@ -46,23 +46,23 @@ namespace fluke {
 
 
 	// scratchpad
-	inline void action_scratchpad_show(fluke::Connection& conn, const std::vector<int>& arg) {
+	inline void action_scratchpad_show(fluke::Connection&) {
 
 	}
 
-	inline void action_scratchpad_hide(fluke::Connection& conn, const std::vector<int>& arg) {
+	inline void action_scratchpad_hide(fluke::Connection&) {
 
 	}
 
-	inline void action_scratchpad_toggle(fluke::Connection& conn, const std::vector<int>& arg) {
+	inline void action_scratchpad_toggle(fluke::Connection&) {
 
 	}
 
-	inline void action_scratchpad_add(fluke::Connection& conn, const std::vector<int>& arg) {
+	inline void action_scratchpad_add(fluke::Connection&) {
 
 	}
 
-	inline void action_scratchpad_remove(fluke::Connection& conn, const std::vector<int>& arg) {
+	inline void action_scratchpad_remove(fluke::Connection&) {
 
 	}
 
@@ -330,7 +330,7 @@ namespace fluke {
 
 
 
-	inline void action_snap_corner(fluke::Connection& conn) {
+	inline void action_snap_corner(fluke::Connection&) {
 
 	}
 
@@ -424,7 +424,7 @@ namespace fluke {
 
 	}
 
-	inline void action_layout_monocle(fluke::Connection& conn) {
+	inline void action_layout_monocle(fluke::Connection&) {
 
 	}
 }

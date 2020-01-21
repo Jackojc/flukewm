@@ -14,7 +14,7 @@ LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lxcb-keysyms $(LDLIBS)
 PROGRAM_CPPFLAGS=$(CPPFLAGS)
 PROGRAM_LDFLAGS=$(LIBS) $(LDFLAGS)
 
-PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow -Wundef -Wno-unused $(CXXWARN)
+PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow -Wundef -Wno-unused -Wno-unused-parameter -Wno-missing-braces $(CXXWARN)
 
 
 # Make Flags

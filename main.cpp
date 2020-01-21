@@ -177,19 +177,17 @@ int main() {
 
 	// Default handler.
 	unhandled_label:
-		auto resp = XCB_EVENT_RESPONSE_TYPE(old_event.get());
-
 		// Handle randr events, these checks are exhaustive so we
 		// do not need to check for unhandled randr events.
-		if (resp == randr_base + XCB_RANDR_SCREEN_CHANGE_NOTIFY) {
+		if (XCB_EVENT_RESPONSE_TYPE(old_event.get()) == randr_base + XCB_RANDR_SCREEN_CHANGE_NOTIFY) {
 			fluke::event_randr_screen_change_notify(conn, std::move(old_event));
 
-		} else if (resp == randr_base + XCB_RANDR_NOTIFY) {
+		} else if (XCB_EVENT_RESPONSE_TYPE(old_event.get()) == randr_base + XCB_RANDR_NOTIFY) {
 			fluke::event_randr_notify(conn, std::move(old_event));
 
 		// Unhandled events.
 		} else {
-			FLUKE_DEBUG_WARN("unhandled event '", fluke::event_str[resp], "'!")
+			FLUKE_DEBUG_WARN("unhandled event '", fluke::event_str[XCB_EVENT_RESPONSE_TYPE(old_event.get())], "'!")
 		}
 
 		old_event = next_event();
