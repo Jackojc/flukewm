@@ -19,14 +19,14 @@ namespace fluke {
 			"'"
 		)
 
-		xcb_window_t focused = fluke::get_focused_window(conn);
+		const xcb_window_t focused = fluke::get_focused_window(conn);
 
-		auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
+		const auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
-		auto new_x = static_cast<uint32_t>(x + x_amount);
-		auto new_y = static_cast<uint32_t>(y + y_amount);
-		auto new_w = static_cast<uint32_t>(w + w_amount);
-		auto new_h = static_cast<uint32_t>(h + h_amount);
+		const auto new_x = static_cast<uint32_t>(x + x_amount);
+		const auto new_y = static_cast<uint32_t>(y + y_amount);
+		const auto new_w = static_cast<uint32_t>(w + w_amount);
+		const auto new_h = static_cast<uint32_t>(h + h_amount);
 
 		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, new_x, new_y, new_w, new_h);
 	}
@@ -95,10 +95,10 @@ namespace fluke {
 		)
 
 		// Get the window which currently has keyboard focus.
-		xcb_window_t focused = fluke::get_focused_window(conn);
+		const xcb_window_t focused = fluke::get_focused_window(conn);
 
 		// Vector of all windows currently mapped.
-		auto windows = fluke::get_mapped_windows(conn);
+		const auto windows = fluke::get_mapped_windows(conn);
 
 		if (windows.size() <= 1)
 			return;
@@ -107,7 +107,7 @@ namespace fluke {
 		// We also want to find the index for the geometry of the focused
 		// specifically too.
 		decltype(windows)::size_type i = 0;
-		auto geoms = fluke::dispatch_consume(conn, [&] (xcb_window_t win) {
+		const auto geoms = fluke::dispatch_consume(conn, [&] (xcb_window_t win) {
 			if (win != focused)
 				i++;
 
@@ -123,7 +123,7 @@ namespace fluke {
 
 
 		// Get geometry of currently focused window.
-		auto [fx, fy, fw, fh] = fluke::as_rect(geoms.at(i));
+		const auto [fx, fy, fw, fh] = fluke::as_rect(geoms.at(i));
 
 		// Get the midpoint of the relevant side of the currently focused window.
 		const std::array fsides{
@@ -133,7 +133,7 @@ namespace fluke {
 			bottom_side(fx, fy, fw, fh),
 		};
 
-		fluke::Point fpoint = fsides.at(static_cast<decltype(fsides)::size_type>(dir));
+		const fluke::Point fpoint = fsides.at(static_cast<decltype(fsides)::size_type>(dir));
 
 
 		// Store distances to windows and the associated window IDs.
@@ -148,11 +148,11 @@ namespace fluke {
 		// Loop over all windows and get the midpoint of all of their four sides.
 		// We get the point which is nearest to the focused window and
 		// add it to our `distances` vector.
-		for (auto [win, geom]: fluke::zip(windows, geoms)) {
+		for (const auto [win, geom]: fluke::zip(windows, geoms)) {
 			if (win == focused)
 				continue;
 
-			auto [x, y, w, h] = fluke::as_rect(geom);
+			const auto [x, y, w, h] = fluke::as_rect(geom);
 
 			// Find which side is closest to focused window.
 			const std::array sides{
@@ -166,7 +166,7 @@ namespace fluke {
 		}
 
 		// Find window with nearest distance.
-		auto nearest_win = std::min_element(distances.begin(), distances.end(), [] (const auto& a, const auto& b) {
+		const auto nearest_win = std::min_element(distances.begin(), distances.end(), [] (const auto& a, const auto& b) {
 			return a.second < b.second;
 		})->first;
 
@@ -194,29 +194,146 @@ namespace fluke {
 		)
 
 		// Get all of the mapped windows.
-		auto windows = fluke::get_mapped_windows(conn);
+		const auto windows = fluke::get_mapped_windows(conn);
 
 		if (windows.size() <= 1)
 			return;
 
 		// Get the currently focused window.
-		xcb_window_t focused = fluke::get_focused_window(conn);
+		const xcb_window_t focused = fluke::get_focused_window(conn);
 
 
 		// Depending on which direction we are focusing, we need to use
 		// different options and windows.
-		std::array opts {
+		const std::array opts {
 			std::pair{windows.back(), XCB_STACK_MODE_BELOW},  // Previous
 			std::pair{windows.front(), XCB_STACK_MODE_ABOVE}, // Next
 		};
 
-		auto[next_win, stack_mode] = opts.at(static_cast<decltype(opts)::size_type>(dir));
+		const auto[next_win, stack_mode] = opts.at(static_cast<decltype(opts)::size_type>(dir));
 
 		// Set focus to new window and shuffle the window stack around.
 		fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_STACK_MODE, stack_mode);
 		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, stack_mode);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, next_win);
 	}
+
+
+
+
+
+
+
+
+	// Misc actions
+	inline void action_center(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE("action '", tinge::fg::make_yellow("CENTER"), "'")
+
+		// Get the focused window and its geometry.
+		const xcb_window_t focused = fluke::get_focused_window(conn);
+		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
+
+		// Get rect of focused display.
+		const auto [window_x, window_y, window_w, window_h] = focused_rect;
+		const auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
+
+		// Center the window on the screen.
+		const auto x = (display_x + display_w / 2) - window_w / 2;
+		const auto y = (display_y + display_h / 2) - window_h / 2;
+
+		fluke::configure_window(conn, focused, fluke::XCB_MOVE, x, y);
+	}
+
+
+
+
+
+
+
+
+	// Window snapping
+	enum {
+		SNAP_LEFT,
+		SNAP_RIGHT,
+		SNAP_TOP,
+		SNAP_BOTTOM,
+	};
+
+	constexpr const char* side_str[] = {
+		"SNAP_LEFT",
+		"SNAP_RIGHT",
+		"SNAP_TOP",
+		"SNAP_BOTTOM",
+	};
+
+	inline void action_snap_side(fluke::Connection& conn, int side) {
+		FLUKE_DEBUG_NOTICE(
+			"action '", tinge::fg::make_yellow("SNAP_SIDE"),
+			"' with arg(s) '", tinge::fg::make_yellow(side_str[side]), "'"
+		)
+
+		// Get focused window.
+		const xcb_window_t focused = fluke::get_focused_window(conn);
+		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
+
+		// Get focused display.
+		const auto [window_x, window_y, window_w, window_h] = focused_rect;
+		auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
+
+
+		// Get usable screen area.
+		display_x += fluke::config::GAP + fluke::config::GUTTER_LEFT;
+		display_y += fluke::config::GAP + fluke::config::GUTTER_TOP;
+		display_w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_RIGHT;
+		display_h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_BOTTOM;
+
+
+		// Rectangles that window will be moved into.
+		const std::array side_rects {
+			// Left side.
+			fluke::Rect{
+				display_x,
+				display_y,
+				display_w / 2 - fluke::config::BORDER_SIZE * 2,
+				display_h
+			},
+
+			// Right side.
+			fluke::Rect{
+				display_x + display_w / 2 + fluke::config::GAP * 2,
+				display_y,
+				display_w / 2 - fluke::config::BORDER_SIZE * 2,
+				display_h
+			},
+
+			// Top side.
+			fluke::Rect{
+				display_x,
+				display_y,
+				display_w,
+				display_h / 2 - fluke::config::BORDER_SIZE * 2
+			},
+
+			// Bottom side.
+			fluke::Rect{
+				display_x,
+				display_y + display_h / 2 + fluke::config::GAP * 2,
+				display_w,
+				display_h / 2 - fluke::config::BORDER_SIZE * 2
+			},
+		};
+
+		// Get the rect of the side we wish to move our window into.
+		const auto [x, y, w, h] = side_rects.at(static_cast<decltype(side_rects)::size_type>(side));
+		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, x, y, w, h);
+	}
+
+
+
+	inline void action_snap_corner(fluke::Connection& conn) {
+
+	}
+
 
 
 
@@ -244,30 +361,34 @@ namespace fluke {
 		)
 
 		// Get all of the mapped windows.
-		auto windows = fluke::get_mapped_windows(conn);
+		const auto windows = fluke::get_mapped_windows(conn);
 
 		if (windows.size() <= 1)
 			return;
 
 
 		// Get focused window ID and its rect.
-		xcb_window_t focused = fluke::get_focused_window(conn);
-		auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
+		const xcb_window_t focused = fluke::get_focused_window(conn);
+		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
 		// Get the rect of the nearest display to the focused window.
 		auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
 
 
 		// Get the height that each slave window should be.
-		int slave_height = display_h / (windows.size() - 1) - (fluke::config::BORDER_SIZE * 2);
-		int sliding_y = display_y;  // Keep track of Y position so we can stack windows on the right.
+		// int slave_height = ((display_h - fluke::config::GUTTER_BOTTOM - fluke::config::GAP) / (windows.size() - 1)) - fluke::config::GAP - fluke::config::BORDER_SIZE * 2;
+		const int slave_height = (display_h / (windows.size() - 1)) - (fluke::config::GAP * 2 - fluke::config::BORDER_SIZE * 2);
 
 		// Get the usable display area.
 		// Leave a gap for window borders.
 		display_x += fluke::config::GAP + fluke::config::GUTTER_LEFT;
 		display_y += fluke::config::GAP + fluke::config::GUTTER_TOP;
-		display_w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP + fluke::config::GUTTER_RIGHT;
-		display_h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP + fluke::config::GUTTER_BOTTOM;
+		display_w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_RIGHT;
+		display_h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_BOTTOM;
+
+
+
+		int sliding_y = display_y;  // Keep track of Y position so we can stack windows on the right.
 
 
 		// Move focused window to master area on the left.
@@ -276,12 +397,9 @@ namespace fluke {
 
 			display_x,
 			display_y,
-			std::ceil(display_w / 2.f) - fluke::config::GAP * 2 - fluke::config::BORDER_SIZE * 2,
+			std::ceil(display_w / 2.f) - (fluke::config::BORDER_SIZE * 2),
 			display_h
 		);
-
-
-		FLUKE_DEBUG_NOTICE(slave_height)
 
 
 		// Stack up all of the slave windows on the right.
@@ -293,15 +411,15 @@ namespace fluke {
 			fluke::configure_window(
 				conn, win, fluke::XCB_MOVE_RESIZE,
 
-				std::ceil(display_x + display_w / 2.f),
+				std::ceil(display_x + display_w / 2.f) + fluke::config::GAP,
 				sliding_y,
 
-				std::ceil(display_w / 2.f) - fluke::config::GAP * 2,
+				std::ceil(display_w / 2.f) - fluke::config::GAP,
 				slave_height
 			);
 
 			// Increment Y position for next window.
-			sliding_y += slave_height + (fluke::config::BORDER_SIZE * 2);
+			sliding_y += slave_height + (fluke::config::BORDER_SIZE * 2) + fluke::config::GAP;
 		}
 
 	}

@@ -50,15 +50,15 @@ namespace fluke {
 			class iterator {
 				// Data
 				private:
-					std::tuple<typename detail::remove_cvref_t<Ts>::iterator...> its;
+					std::tuple<typename detail::remove_cvref_t<Ts>::const_iterator...> its;
 
 
 				// Constructors
 				public:
-					constexpr iterator(typename detail::remove_cvref_t<Ts>::iterator... args):
+					constexpr iterator(typename detail::remove_cvref_t<Ts>::const_iterator... args):
 						its{std::move(args)...} {}
 
-					constexpr iterator(std::tuple<typename detail::remove_cvref_t<Ts>::iterator...> args):
+					constexpr iterator(std::tuple<typename detail::remove_cvref_t<Ts>::const_iterator...> args):
 						its{std::move(args)} {}
 
 					constexpr iterator(const iterator& other):
@@ -114,28 +114,18 @@ namespace fluke {
 		// Iterators...
 		public:
 			// Construct iterator class while passing tuple of iterators from containers tuple.
-			constexpr iterator begin() {
+			constexpr iterator begin() const {
 				return std::apply([] (auto&&... x) {
 					using std::begin;  // trick for ADL allowing custom size functions to be used.
 					return iterator(begin(x)...);  // variadic template expansion, call std::begin on all elements
 				}, containers);
 			}
 
-			constexpr iterator end() {
+			constexpr iterator end() const {
 				return std::apply([] (auto&&... x) {
 					using std::end;  // trick for ADL allowing custom size functions to be used.
 					return iterator(end(x)...);
 				}, containers);
-			}
-
-
-			// Const iterators.
-			constexpr iterator begin() const {
-				return begin();
-			}
-
-			constexpr iterator end() const {
-				return end();
 			}
 	};
 

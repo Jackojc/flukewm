@@ -14,7 +14,7 @@ namespace fluke {
 		detail::size_type w, h;
 
 		template <typename T1, typename T2, typename T3, typename T4>
-		Rect(T1 a, T2 b, T3 c, T4 d):
+		constexpr Rect(T1 a, T2 b, T3 c, T4 d):
 			x(static_cast<detail::pos_type>(a)),
 			y(static_cast<detail::pos_type>(b)),
 			w(static_cast<detail::size_type>(c)),
@@ -36,7 +36,7 @@ namespace fluke {
 		detail::pos_type x, y;
 
 		template <typename T1, typename T2>
-		Point(T1 a, T2 b):
+		constexpr Point(T1 a, T2 b):
 			x(static_cast<detail::pos_type>(a)),
 			y(static_cast<detail::pos_type>(b))
 		{
