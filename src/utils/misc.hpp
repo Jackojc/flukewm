@@ -13,7 +13,7 @@ namespace fluke {
 		Converts a numeric argument to hexadecimal format with 0x prepended.
 
 		example:
-			to_hex(123);
+			std::cout << fluke::to_hex(fluke::get_focused_window(conn)) << '\n';
 	*/
 	template <typename T>
 	inline std::string to_hex(T&& arg) {
@@ -33,12 +33,16 @@ namespace fluke {
 		argument remain constant for all requests.
 
 		example:
-			dispatch_consume(conn, [] (auto win, auto&&... args) {
-				return fluke::get_window_attributes( args..., win );
-			}, windows);
+			auto geoms = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+				return fluke::get_geometry( conn, win );
+			}, fluke::get_mapped_windows(conn));
+
+			for (const auto& geom: geoms)
+				std::cout << fluke::as_rect(geom) << '\n';
 	*/
 	template <typename T, typename F, typename... Ts>
 	inline auto dispatch_consume(fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("dispatch_consume"), "'")
 		std::vector<decltype(func(changing_arg.at(0), std::forward<Ts>(args)...))> request;
 		std::vector<decltype(fluke::get(conn, request.front()))> reply;
 
@@ -60,9 +64,14 @@ namespace fluke {
 		Returns a vector of all windows.
 
 		example:
-			get_tree(conn);
+			for (xcb_window_t win: fluke::get_tree(conn)) {
+				auto attr = fluke::get(conn, fluke::get_window_attributes(conn, win));
+				std::cout << fluke::is_mapped(attr) << '\n';
+			}
 	*/
 	inline auto get_tree(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_tree"), "'")
+
 		// Ask X for a list of windows, returns a pointer to
 		// an `xcb_query_tree_reply_t` structure.
 		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
@@ -81,11 +90,17 @@ namespace fluke {
 
 	/*
 		Returns a vector of xcb_window_t IDs which contains all of the known windows.
+		This includes mapped(visible) and unmapped(invisible) windows.
 
 		example:
-			get_all_windows(conn);
+			auto windows = fluke::get_all_windows(conn);
+
+			for (xcb_window_t win: windows)
+				std::cout << fluke::to_hex(win) << '\n';
 	*/
 	inline auto get_all_windows(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_all_windows"), "'")
+
 		// Get all windows.
 		auto windows = fluke::get_tree(conn);
 
@@ -116,9 +131,14 @@ namespace fluke {
 		out unmapped(invisible) windows.
 
 		example:
-			get_mapped_windows(conn);
+			auto windows = fluke::get_mapped_windows(conn);
+
+			for (xcb_window_t win: windows)
+				std::cout << fluke::to_hex(win) << '\n';
 	*/
 	inline auto get_mapped_windows(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_mapped_windows"), "'")
+
 		// Get all windows.
 		auto windows = fluke::get_tree(conn);
 
@@ -149,16 +169,19 @@ namespace fluke {
 		Returns a vector of xcb_randr_provider_t which contains all of the known providers.
 
 		example:
-			get_providers(conn);
+			auto providers = fluke::get_providers(conn);
 	*/
 	inline auto get_providers(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_providers"), "'")
+
 		auto provider_info = fluke::get(conn, fluke::randr_get_providers(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
 		// Each element is copied into the vector.
 		std::vector<xcb_randr_provider_t> providers{
 			xcb_randr_get_providers_providers(provider_info.get()),  // pointer to array of windows.
-			xcb_randr_get_providers_providers(provider_info.get()) + xcb_randr_get_providers_providers_length(provider_info.get())
+			xcb_randr_get_providers_providers(provider_info.get()) +
+				xcb_randr_get_providers_providers_length(provider_info.get())
 		};
 
 		return providers;
@@ -170,16 +193,19 @@ namespace fluke {
 		Returns a vector of xcb_randr_output_t IDs which contains all of the known displays.
 
 		example:
-			get_provider_info(conn, provider);
+			auto outputs = fluke::get_provider_info(conn, provider);
 	*/
 	inline auto get_provider_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_provider_info"), "'")
+
 		auto output_info = fluke::get(conn, fluke::randr_get_provider_info(conn, provider));
 
 		// Create a vector using start pointer and end pointer.
 		// Each element is copied into the vector.
 		std::vector<xcb_randr_output_t> outputs{
 			xcb_randr_get_provider_info_outputs(output_info.get()),  // pointer to array of outputs.
-			xcb_randr_get_provider_info_outputs(output_info.get()) + xcb_randr_get_provider_info_outputs_length(output_info.get())
+			xcb_randr_get_provider_info_outputs(output_info.get()) +
+				xcb_randr_get_provider_info_outputs_length(output_info.get())
 		};
 
 		return outputs;
@@ -188,12 +214,23 @@ namespace fluke {
 
 
 	/*
-		Returns a vector of screen resources.
+		Returns a vector of xcb_randr_output_t IDs which contains all of the known displays.
+		This functions similarly to the above function
+		`get_provider_info` but it's a bit simpler to use.
 
 		example:
-			get_screen_resources(conn);
+			for (auto& output: fluke::get_screen_resources(conn)) {
+				auto info = fluke::get(conn, fluke::randr_get_output_info(conn, output));
+
+				if (fluke::is_connected(info)) {
+					auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::randr_get_crtc_info(info->crtc)));
+					...
+				}
+			}
 	*/
 	inline auto get_screen_resources(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_screen_resources"), "'")
+
 		auto screen_resources = fluke::get(conn, fluke::randr_get_screen_resources_current(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
@@ -214,9 +251,14 @@ namespace fluke {
 		attributes of all connected displays.
 
 		example:
-			get_output_attributes(conn);
+			for (auto& disp: fluke::get_crtcs(conn)) {
+				auto [x, y, w, h] = fluke::as_rect(disp);
+				...
+			}
 	*/
 	inline auto get_crtcs(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_crtcs"), "'")
+
 		auto outputs = fluke::get_screen_resources(conn);
 
 		// Get output info for each display.
@@ -246,9 +288,15 @@ namespace fluke {
 		Can be used to find the display that a window is on for example.
 
 		example:
-			get_nearest_display_rect(conn, rect);
+			auto [x, y, w, h] = get_nearest_display_rect(conn,
+				fluke::as_rect(fluke::get(conn,
+					fluke::get_geometry(conn, fluke::get_focused_window(conn))
+				))
+			);
 	*/
 	inline fluke::Rect get_nearest_display_rect(fluke::Connection& conn, const fluke::Rect& r) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_nearest_display_rect"), "'")
+
 		// Destructure rect argument.
 		auto [x_, y_, w_, h_] = r;
 
@@ -282,9 +330,11 @@ namespace fluke {
 		Gets a vector of keycodes from a supplied keysym.
 
 		example:
-			get_keycodes(conn, keysym);
+			for (auto& keycode: fluke::get_keycodes(conn, key_keysym)) { ... }
 	*/
 	inline auto get_keycodes(fluke::Connection& conn, xcb_keysym_t sym) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_keycodes"), "'")
+
 		// Get a pointer to an array of keycodes.
 		auto keycode_ptr = std::unique_ptr<xcb_keycode_t[], decltype(&std::free)>{
 			xcb_key_symbols_get_keycode(conn.keysyms(), sym), &std::free
@@ -311,7 +361,8 @@ namespace fluke {
 		Convert a keycode to a keysym.
 
 		example:
-			get_keysym(conn, keycode);
+			xcb_keysym_t keysym = fluke::get_keysym(conn, e->detail);
+
 	*/
 	inline auto get_keysym(fluke::Connection& conn, xcb_keycode_t keycode) {
 		return xcb_key_symbols_get_keysym(conn.keysyms(), keycode, 0);
@@ -331,6 +382,8 @@ namespace fluke {
 	*/
 	template <size_t N>
 	inline void register_keybindings(fluke::Connection& conn, const fluke::Keys<N>& keys) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("register_keybindings"), "'")
+
 		// Toggleable modifiers.
 		constexpr std::array modifiers{
 			uint32_t{0},
@@ -340,6 +393,8 @@ namespace fluke {
 		};
 
 		// Get every combination of modifiers.
+		FLUKE_DEBUG_NOTICE_SUB("generate modifier combinations.")
+
 		std::vector<uint32_t> modifiers_combinations;
 
 		// This is a bit untidy but it produces every combination of modifiers.
@@ -355,6 +410,7 @@ namespace fluke {
 		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), fluke::XCB_MASK_ANY);
 
 		// Register our keybindings.
+		FLUKE_DEBUG_NOTICE_SUB("grab keys.")
 		for (auto& [key_mod, key_keysym, key_func]: keys) {
 			for (auto& keycode: fluke::get_keycodes(conn, key_keysym)) {
 				// Register the keybind under every modifier in the above structure.
@@ -362,7 +418,9 @@ namespace fluke {
 				// active like caps lock.
 				// This will make X send us events for the registered bindings.
 				for (auto& mod: modifiers_combinations)
-					fluke::grab_key(conn, true, conn.root(), key_mod | mod, keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+					fluke::grab_key(
+						conn, true, conn.root(), key_mod | mod, keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC
+					);
 			}
 		}
 	}
@@ -373,7 +431,7 @@ namespace fluke {
 		This function returns the currently focused window ID.
 
 		example:
-			get_focused_window(conn);
+			xcb_window_t focused = fluke::get_focused_window(conn);
 	*/
 	inline auto get_focused_window(fluke::Connection& conn) {
 		return fluke::get(conn, fluke::get_input_focus(conn))->focus;

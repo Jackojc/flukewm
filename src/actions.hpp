@@ -19,8 +19,13 @@ namespace fluke {
 			"'"
 		)
 
+		// Get the currently focused window.
+		FLUKE_DEBUG_NOTICE_SUB("get focused window.");
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 
+
+		// Get geometry of focused window and calculate offsets for the new window rect.
+		FLUKE_DEBUG_NOTICE_SUB("calculate offsets.");
 		const auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
 		const auto new_x = static_cast<uint32_t>(x + x_amount);
@@ -28,6 +33,7 @@ namespace fluke {
 		const auto new_w = static_cast<uint32_t>(w + w_amount);
 		const auto new_h = static_cast<uint32_t>(h + h_amount);
 
+		FLUKE_DEBUG_NOTICE_SUB("set new rect for window.");
 		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, new_x, new_y, new_w, new_h);
 	}
 
@@ -95,6 +101,7 @@ namespace fluke {
 		)
 
 		// Get the window which currently has keyboard focus.
+		FLUKE_DEBUG_NOTICE_SUB("get focused window.");
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 
 		// Vector of all windows currently mapped.
@@ -106,6 +113,7 @@ namespace fluke {
 		// Get the geometry of all mapped windows.
 		// We also want to find the index for the geometry of the focused
 		// specifically too.
+		FLUKE_DEBUG_NOTICE_SUB("get geometry of all mapped windows.");
 		decltype(windows)::size_type i = 0;
 		const auto geoms = fluke::dispatch_consume(conn, [&] (xcb_window_t win) {
 			if (win != focused)
@@ -123,6 +131,7 @@ namespace fluke {
 
 
 		// Get geometry of currently focused window.
+		FLUKE_DEBUG_NOTICE_SUB("get reference point on focused window.");
 		const auto [fx, fy, fw, fh] = fluke::as_rect(geoms.at(i));
 
 		// Get the midpoint of the relevant side of the currently focused window.
@@ -148,6 +157,7 @@ namespace fluke {
 		// Loop over all windows and get the midpoint of all of their four sides.
 		// We get the point which is nearest to the focused window and
 		// add it to our `distances` vector.
+		FLUKE_DEBUG_NOTICE_SUB("find nearest points on other windows to reference point.");
 		for (const auto [win, geom]: fluke::zip(windows, geoms)) {
 			if (win == focused)
 				continue;
@@ -166,11 +176,13 @@ namespace fluke {
 		}
 
 		// Find window with nearest distance.
+		FLUKE_DEBUG_NOTICE_SUB("get nearest window.");
 		const auto nearest_win = std::min_element(distances.begin(), distances.end(), [] (const auto& a, const auto& b) {
 			return a.second < b.second;
 		})->first;
 
 		// Set input focus to new window.
+		FLUKE_DEBUG_NOTICE_SUB("focus window.");
 		fluke::configure_window(conn, nearest_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, nearest_win);
 	}
@@ -200,16 +212,18 @@ namespace fluke {
 			return;
 
 		// Get the currently focused window.
+		FLUKE_DEBUG_NOTICE_SUB("get focused window.");
 		const xcb_window_t focused = fluke::get_focused_window(conn);
-
 
 		// Depending on which direction we are focusing, we need to use
 		// different options and windows.
+		FLUKE_DEBUG_NOTICE_SUB("generate table for options.");
 		const std::array opts {
 			std::pair{windows.back(), XCB_STACK_MODE_BELOW},  // Previous
 			std::pair{windows.front(), XCB_STACK_MODE_ABOVE}, // Next
 		};
 
+		FLUKE_DEBUG_NOTICE_SUB("focus window.");
 		const auto[next_win, stack_mode] = opts.at(static_cast<decltype(opts)::size_type>(dir));
 
 		// Set focus to new window and shuffle the window stack around.
@@ -230,6 +244,7 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE("action '", tinge::fg::make_yellow("CENTER"), "'")
 
 		// Get the focused window and its geometry.
+		FLUKE_DEBUG_NOTICE_SUB("get focused window and display.");
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
@@ -241,6 +256,7 @@ namespace fluke {
 		const auto x = (display_x + display_w / 2) - window_w / 2;
 		const auto y = (display_y + display_h / 2) - window_h / 2;
 
+		FLUKE_DEBUG_NOTICE_SUB("center window.");
 		fluke::configure_window(conn, focused, fluke::XCB_MOVE, x, y);
 	}
 
@@ -273,6 +289,7 @@ namespace fluke {
 		)
 
 		// Get focused window.
+		FLUKE_DEBUG_NOTICE_SUB("getting focused window and display.")
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
@@ -282,6 +299,7 @@ namespace fluke {
 
 
 		// Get usable screen area.
+		FLUKE_DEBUG_NOTICE_SUB("calculate offsets.");
 		display_x += fluke::config::GAP + fluke::config::GUTTER_LEFT;
 		display_y += fluke::config::GAP + fluke::config::GUTTER_TOP;
 		display_w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_RIGHT;
@@ -323,6 +341,8 @@ namespace fluke {
 			},
 		};
 
+		FLUKE_DEBUG_NOTICE_SUB("snap window.");
+
 		// Get the rect of the side we wish to move our window into.
 		const auto [x, y, w, h] = side_rects.at(static_cast<decltype(side_rects)::size_type>(side));
 		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, x, y, w, h);
@@ -361,22 +381,50 @@ namespace fluke {
 		)
 
 		// Get all of the mapped windows.
-		const auto windows = fluke::get_mapped_windows(conn);
+		FLUKE_DEBUG_NOTICE_SUB("getting mapped windows.")
+		auto windows = fluke::get_mapped_windows(conn);
 
 		if (windows.size() <= 1)
 			return;
 
 
-		// Get focused window ID and its rect.
+		// Get focused window ID.
+		FLUKE_DEBUG_NOTICE_SUB("getting the focused window.")
 		const xcb_window_t focused = fluke::get_focused_window(conn);
-		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
+
+
+		// Get the geometry of all mapped windows.
+		// Find the index of the focused window also.
+		FLUKE_DEBUG_NOTICE_SUB("getting the window geometry for all windows.")
+		decltype(windows)::size_type focused_index = 0;
+		const auto geoms = fluke::dispatch_consume(conn, [&] (xcb_window_t win) {
+			if (win != focused)
+				focused_index++;
+
+			return fluke::get_geometry( conn, win );
+		}, windows);
+
+
+		// Get focused window rect.
+		FLUKE_DEBUG_NOTICE_SUB("getting nearest display to focused window.")
+		const auto focused_rect = fluke::as_rect(geoms.at(focused_index));
 
 		// Get the rect of the nearest display to the focused window.
-		auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
+		auto display_rect = fluke::get_nearest_display_rect(conn, focused_rect);
+		auto [display_x, display_y, display_w, display_h] = display_rect;
+
+
+		// Filter out windows which are not on the same display as the focused window.
+		FLUKE_DEBUG_NOTICE_SUB("filter windows outside of focused display.")
+		decltype(windows)::size_type geoms_index = 0;
+		windows.erase(std::remove_if(windows.begin(), windows.end(), [&] (xcb_window_t win) {
+			return display_rect != fluke::get_nearest_display_rect(conn, fluke::as_rect(geoms.at(geoms_index++)));
+		}), windows.end());
+
 
 
 		// Get the height that each slave window should be.
-		// int slave_height = ((display_h - fluke::config::GUTTER_BOTTOM - fluke::config::GAP) / (windows.size() - 1)) - fluke::config::GAP - fluke::config::BORDER_SIZE * 2;
+		FLUKE_DEBUG_NOTICE_SUB("calculating offsets.")
 		const int slave_height = (display_h / (windows.size() - 1)) - (fluke::config::GAP * 2 - fluke::config::BORDER_SIZE * 2);
 
 		// Get the usable display area.
@@ -387,11 +435,11 @@ namespace fluke {
 		display_h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_BOTTOM;
 
 
-
 		int sliding_y = display_y;  // Keep track of Y position so we can stack windows on the right.
 
 
 		// Move focused window to master area on the left.
+		FLUKE_DEBUG_NOTICE_SUB("tile the master window.")
 		fluke::configure_window(
 			conn, focused, fluke::XCB_MOVE_RESIZE,
 
@@ -403,6 +451,7 @@ namespace fluke {
 
 
 		// Stack up all of the slave windows on the right.
+		FLUKE_DEBUG_NOTICE_SUB("tile the slave windows.")
 		for (auto win: windows) {
 			if (win == focused)
 				continue;

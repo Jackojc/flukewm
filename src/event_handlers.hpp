@@ -9,6 +9,12 @@
 namespace fluke {
 	// Function signature for event handlers: void(*)(fluke::Connection&, fluke::Event&&);
 
+
+	/*
+		This event is triggered whenever the pointer enters a window.
+
+		We also optionally set the input focus to this window.
+	*/
 	inline void event_enter_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::EnterNotifyEvent>(std::move(e_));
 		const xcb_window_t win = e->event;
@@ -22,13 +28,19 @@ namespace fluke {
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
-		// set input focus to new window, set borders and stacking order.
+		// Set input focus to new window, set borders and stacking order if option is enabled.
 		if constexpr(fluke::config::MOUSE_FOCUS)
 			fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
 
 
+	/*
+		This event is triggered whenever the pointer leaves a window.
+
+		We also optionally set the input focus to the root window if mouse focusing
+		is enabled and lazy focusing is disabled.
+	*/
 	inline void event_leave_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::LeaveNotifyEvent>(std::move(e_));
 		const xcb_window_t win = e->event;
@@ -39,14 +51,20 @@ namespace fluke {
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
-
-		// enable this to unfocus window when pointer is moved outside of any windows
-		// if constexpr(not config::USE_LAZY_FOCUS)
-		// 	fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, conn.root());
+		// Optionally set input focus to root if certain options are enabled.
+		if constexpr(not config::USE_LAZY_FOCUS and fluke::config::MOUSE_FOCUS)
+			fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, conn.root());
 	}
 
 
 
+	/*
+		This event is triggered when a window gains focus.
+
+		We warp the pointer to the center of the focused window too.
+
+		We also set the border colour to active.
+	*/
 	inline void event_focus_in(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::FocusInEvent>(std::move(e_));
 		const xcb_window_t win = e->event;
@@ -68,6 +86,8 @@ namespace fluke {
 		)
 
 		// Move cursor to center of window.
+		FLUKE_DEBUG_NOTICE_SUB("centering pointer inside window.")
+
 		const auto [x_, y_, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win)));
 
 		const auto x = w / 2;
@@ -79,6 +99,11 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a window loses focus.
+
+		We set the border colour to inactive.
+	*/
 	inline void event_focus_out(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::FocusOutEvent>(std::move(e_));
 		const xcb_window_t win = e->event;
@@ -97,6 +122,13 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a new window is created.
+
+		We center the window and grow it to a proportion of the display size.
+
+		We register to receive events from the window and set its border size.
+	*/
 	inline void event_create_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::CreateNotifyEvent>(std::move(e_));
 		const xcb_window_t win = e->window;
@@ -112,11 +144,13 @@ namespace fluke {
 
 
 		// Find the currently focused display to launch the new window on.
+		FLUKE_DEBUG_NOTICE_SUB("getting focused window and display.")
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
 		const auto [window_x, window_y, window_w, window_h] = focused_rect;
 		const auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
+
 
 		// Resize window to a percentage of the screen size.
 		const auto w = (display_w * fluke::config::NEW_WINDOW_PERCENT) / 100;
@@ -127,6 +161,7 @@ namespace fluke {
 		const auto y = (display_y + display_h / 2) - h / 2;
 
 		// Register to receive events from the window and resize/move the window.
+		FLUKE_DEBUG_NOTICE_SUB("resising and moving window.")
 		fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
 		fluke::configure_window(
 			conn, win,
@@ -137,6 +172,11 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a window is destroyed.
+
+		We focus the previous window in the stack ands set its stacking order.
+	*/
 	inline void event_destroy_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::DestroyNotifyEvent>(std::move(e_));
 		const xcb_window_t win = e->window;
@@ -153,12 +193,18 @@ namespace fluke {
 		if (windows.size() == 0)
 			return;
 
-		fluke::configure_window(conn, windows.back(), XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
-		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, windows.back());
+		xcb_window_t new_win = windows.back();
+		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
 
 
+	/*
+		This event is triggered when a window requests to be mapped(made visible).
+
+		We will also set the stacking order and input focus.
+	*/
 	inline void event_map_request(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::MapRequestEvent>(std::move(e_));
 		const xcb_window_t win = e->window;
@@ -176,6 +222,9 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a window is unmapped, usually upon its destruction.
+	*/
 	inline void event_unmap_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::UnmapNotifyEvent>(std::move(e_));
 		const xcb_window_t win = e->window;
@@ -189,7 +238,12 @@ namespace fluke {
 
 
 
-	// this event cant be very hot if using a tool like xmmv
+	/*
+		This event is triggered when a window wants to be moved or resized.
+
+		Note that this function can be very hot if used with
+		a program like `xmmv` from wmutils.
+	*/
 	inline void event_configure_request(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(e_));
 		const xcb_window_t win = e->window;
@@ -201,8 +255,9 @@ namespace fluke {
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
-
-		// this functions essentially as a stack to push values onto.
+		// `values` here functions as a stack.
+		// We push values onto it depending on if a bitmask is satisfied
+		// for each possible option.
 		uint8_t i = 0;
 		std::array<uint32_t, 7> values{};
 
@@ -219,6 +274,9 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a property is changed, usually related to ICCCM or EWMH.
+	*/
 	inline void event_property_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::PropertyNotifyEvent>(std::move(e_));
 
@@ -228,6 +286,9 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a window sends us a custom message, usally ICCCM or EWMH.
+	*/
 	inline void event_client_message(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::ClientMessageEvent>(std::move(e_));
 
@@ -237,17 +298,26 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a screen(s) is modified. for example, a monitor
+		is unplugged or the resolution altered.
+
+		We also move any windows that may be off-screen back into view.
+	*/
 	inline void event_randr_screen_change_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::RandrScreenChangeNotifyEvent>(std::move(e_));
 
 		fluke::on_randr_screen_change(conn);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("RANDR_SCREEN_CHANGE_NOTIFY"), "'" )
 
-		// move windows that are off screen back into view.
+		// Move windows that are off screen back into view.
 	}
 
 
 
+	/*
+		I'm not actually sure when this gets triggered or why.
+	*/
 	inline void event_randr_notify(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::RandrNotifyEvent>(std::move(e_));
 
@@ -257,6 +327,11 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when a grabbed key is pressed.
+
+		We will call the callback function associated with a keypress we are monitoring.
+	*/
 	inline void event_keypress(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::KeyPressEvent>(std::move(e_));
 		const xcb_keysym_t keysym = fluke::get_keysym(conn, e->detail);
@@ -264,11 +339,10 @@ namespace fluke {
 		fluke::on_keypress(conn);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("KEYPRESS"), "'" )
 
-
+		// Remove any modifiers from a mask.
 		constexpr auto clean = [] (unsigned mask) {
 			return mask & ~(fluke::XCB_MASK_CAPS_LOCK | fluke::XCB_MASK_NUM_LOCK | fluke::XCB_MASK_SCROLL_LOCK);
 		};
-
 
 		// Find `fluke::Key` structure which has a matching keysym and modifier.
 		for (const auto& [mod, sym, func]: fluke::config::keys) {
@@ -281,6 +355,12 @@ namespace fluke {
 
 
 
+	/*
+		This event is triggered when an error occurs, usually when
+		another request could not be fulfilled.
+
+		BadWindow errors are expected to happen and as such, are ignored explicitly.
+	*/
 	inline void event_error(fluke::Connection& conn, fluke::Event&& e_) {
 		const auto e = fluke::event_cast<fluke::Error>(std::move(e_));
 

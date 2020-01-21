@@ -13,6 +13,7 @@ namespace fluke {
 		detail::pos_type  x, y;
 		detail::size_type w, h;
 
+
 		template <typename T1, typename T2, typename T3, typename T4>
 		constexpr Rect(T1 a, T2 b, T3 c, T4 d):
 			x(static_cast<detail::pos_type>(a)),
@@ -21,6 +22,20 @@ namespace fluke {
 			h(static_cast<detail::size_type>(d))
 		{
 
+		}
+
+
+		constexpr bool operator==(const Rect& rhs) const {
+			return
+				x == rhs.x and
+				y == rhs.y and
+				w == rhs.w and
+				h == rhs.h
+			;
+		}
+
+		constexpr bool operator!=(const Rect& rhs) const {
+			return not(*this == rhs);
 		}
 	};
 
@@ -35,12 +50,25 @@ namespace fluke {
 	struct Point {
 		detail::pos_type x, y;
 
+
 		template <typename T1, typename T2>
 		constexpr Point(T1 a, T2 b):
 			x(static_cast<detail::pos_type>(a)),
 			y(static_cast<detail::pos_type>(b))
 		{
 
+		}
+
+
+		constexpr bool operator==(const Point& rhs) const {
+			return
+				x == rhs.x and
+				y == rhs.y
+			;
+		}
+
+		constexpr bool operator!=(const Point& rhs) const {
+			return not(*this == rhs);
 		}
 	};
 
