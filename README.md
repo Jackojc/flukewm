@@ -67,6 +67,9 @@ This project uses the GPLv2 license. (check [LICENSE.md](LICENSE.md))
 	- [wmutils](https://github.com/wmutils/core)
 	- [disputils](https://github.com/tudurom/disputils)
 	- [windowchef](https://github.com/tudurom/windowchef)
+	- [mcwm](https://github.com/bbidulock/mcwm)
+	- [2bwm](https://github.com/venam/2bwm)
+	- [sowm](https://github.com/dylanaraps/sowm)
 
 ### progress & discussion
 You can join the discord server in order to follow progress and/or contribute to discussion of the project. (https://discord.gg/RmgjcES)
