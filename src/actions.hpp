@@ -100,7 +100,7 @@ namespace fluke {
 		// Vector of all windows currently mapped.
 		auto windows = fluke::get_mapped_windows(conn);
 
-		if (windows.size() <= 0)
+		if (windows.size() <= 1)
 			return;
 
 		// Get the geometry of all mapped windows.

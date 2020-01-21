@@ -18,37 +18,40 @@ Fluke is a simple (but not extremely barebones) window manager for X which uses 
 I wanted a very minimal window manager that suited my workflow, had good hotplug multimonitor support and was written in something a little bit less cryptic than C. I never really found what I was looking for in other window managers and decided to give it a try myself.
 
 ### features
-> The planned features list is by no means exhaustive, it's just what I have managed to think of right now.
+> The planned features list is by no means exhaustive, it's just what I have managed to think of right now (open to suggestions).
 
 #### current
-- Focus windows using the mouse
-- Adopt orphaned windows by default (allows you to restart flukewm in the case of a crash and not lose any work)
-- Window borders
-- Hooks which run every N ms
+- keybindings
+- window centering
+- window resizing & moving
+- tiling (on-demand with keybinding)
+- directional focusing, next/prev focusing, mouse focusing
+- adopt orphaned windows (allows you to restart flukewm in place)
+- configurable gutters to reserve space for status bars
+- configurable window gaps & borders
 
 #### planned/ideas
-- Move & resize windows
-- Fullscreen windows
-- Center windows
-- Window snapping
-- Workspaces (N per monitor)
-- Groups/Scratchpad (seperate from workspaces in that you hide or show them regardless of what workspace you're on)
-- _Basic_ EWMH support for docks, notifications, respectful closing of windows etc
-- Monitor hotplug support (automatically re-adjust windows & layout, maybe a built in autorandr functionality?)
-- Keybindings
+- fullscreen windows
+- window snapping
+- workspaces & scratchpads
+- _basic_ EWMH support for docks, notifications, respectful closing of windows etc.
+- monitor hotplug support
 
 ### prerequisites
-- Any C++17 compliant compiler should work (tested with clang-9 and gcc-9)
-- Libraries:
+- any c++17 compliant compiler should work (tested with clang-9)
+- libraries/headers:
 	- `xcb`
 	- `xcb-util`
 	- `xcb-randr`
 	- `xcb-icccm`
+	- `xcb-ewmh`
+	- `xcb-keysyms`
+	- `X11` (for key symbols)
 
 ### build & run
-- Run `make` or `make debug=no symbols=no` for debug and release build respectively (uses gcc by default)
-- Binary will be placed in `build/flukewm` or you can run using the symlink in the root of the project, `./flukewm`
-- Note: fluke will not run if another window manager is currently active
+- run `make` or `make debug=no symbols=no` for debug and release build respectively (uses gcc by default)
+- binary will be placed at `build/fluke`
+- note: fluke will not run if another window manager is currently active
 
 ### installation
 > todo...
