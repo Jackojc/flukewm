@@ -6,27 +6,27 @@
 #include <fluke.hpp>
 
 
-
 std::jmp_buf exit_jump;  // This is used to jump back to main after a signal is handled.
 int status;              // Exit status for signal handler.
 
 
 // Keyboard interrupt.
 void sigint(int) {
-	FLUKE_DEBUG( tinge::warnln("SIGINT") )
+	FLUKE_DEBUG_WARN("SIGINT")
 	std::longjmp(exit_jump, EXIT_FAILURE);
 }
 
 
 // Terminate.
 void sigterm(int) {
-	FLUKE_DEBUG( tinge::warnln("SIGTERM") )
+	FLUKE_DEBUG_WARN("SIGTERM")
 	std::longjmp(exit_jump, EXIT_FAILURE);
 }
 
 
 // Kill.
 [[noreturn]] void sigkill(int) {
+	FLUKE_DEBUG_ERROR("SIGKILL")
 	std::exit(EXIT_FAILURE);
 }
 
@@ -34,19 +34,20 @@ void sigterm(int) {
 
 int main() {
 	// Setup signals handlers.
+	FLUKE_DEBUG_SUCCESS("setting up signal handlers.")
 	std::signal(SIGINT, sigint);
 	std::signal(SIGTERM, sigterm);
 	std::signal(SIGKILL, sigkill);
 
 
-
 	// Connect to X.
-	FLUKE_DEBUG( tinge::successln("connect") )
+	FLUKE_DEBUG_SUCCESS("connecting to X server.")
 	fluke::Connection conn;
 
 
-
 	// Setup the randr extension to allow us to recieve display change events.
+	FLUKE_DEBUG_SUCCESS("setting up randr extension.")
+
 	const auto randr_ext = xcb_get_extension_data(conn, &xcb_randr_id);
 	const auto randr_base = randr_ext->first_event;
 
@@ -58,16 +59,14 @@ int main() {
 	);
 
 
-
 	// Register to receive window manager events. Only one window manager can be active at one time.
-	FLUKE_DEBUG( tinge::successln("register as window manager") )
+	FLUKE_DEBUG_SUCCESS("registering as a window manager.")
 	fluke::change_window_attributes(conn, conn.root(), XCB_CW_EVENT_MASK, fluke::XCB_WINDOWMANAGER_EVENTS);
-
 
 
 	// Gain control of windows which were already open before the window manager was started
 	// so that we can receive events for them.
-	FLUKE_DEBUG( tinge::successln("adopt orphans") )
+	FLUKE_DEBUG_SUCCESS("adopting orphaned windows.")
 
 	// For every mapped window, tell it what events we wish to receive from it
 	// and also set the border colour and width of the window.
@@ -87,20 +86,18 @@ int main() {
 	fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_ACTIVE);
 
 
-
 	// Register keybindings defined in the `keys` structure of the config.
+	FLUKE_DEBUG_SUCCESS("registering keybindings.")
 	fluke::register_keybindings(conn, fluke::config::keys);
-
 
 
 	// Make sure we are synced up with X before we start handling events.
 	conn.sync();
 
-
-
 	// Set jump point, when a signal handler gets activated, it will jump here.
 	if (status = setjmp(exit_jump); status) {
-		FLUKE_DEBUG( tinge::warnln("jumping to exit") )
+		FLUKE_DEBUG_SUCCESS("signal caught, exiting.")
+		fluke::on_exit(conn);
 		return EXIT_SUCCESS;
 	}
 
@@ -141,6 +138,7 @@ int main() {
 
 
 	// Generate a lookup table that maps event types -> labels.
+	FLUKE_DEBUG_SUCCESS("setting up events lookup table.")
 	#define NEW_HANDLER(event_id, name) std::pair<decltype(XCB_ENTER_NOTIFY), void*>{ event_id, &&name##_label },
 		constexpr auto labels = generate_table(&&unhandled_label, std::array{ EVENT_HANDLERS });
 	#undef NEW_HANDLER
@@ -166,7 +164,8 @@ int main() {
 
 
 	// Retrieve first event.
-	FLUKE_DEBUG( tinge::successln("starting main event loop") )
+	FLUKE_DEBUG_SUCCESS("starting main event loop.")
+	fluke::on_launch(conn);
 	auto old_event = next_event();  // keep old event so it can be passed to handler
 
 
@@ -180,27 +179,21 @@ int main() {
 	unhandled_label:
 		auto resp = XCB_EVENT_RESPONSE_TYPE(old_event.get());
 
+		// Handle randr events, these checks are exhaustive so we
+		// do not need to check for unhandled randr events.
 		if (resp == randr_base + XCB_RANDR_SCREEN_CHANGE_NOTIFY) {
 			fluke::event_randr_screen_change_notify(conn, std::move(old_event));
 
 		} else if (resp == randr_base + XCB_RANDR_NOTIFY) {
 			fluke::event_randr_notify(conn, std::move(old_event));
 
+		// Unhandled events.
 		} else {
-			FLUKE_DEBUG_WARN( "unhandled event '", fluke::event_str[resp], "'!" )
+			FLUKE_DEBUG_WARN("unhandled event '", fluke::event_str[resp], "'!")
 		}
 
 		old_event = next_event();
 		goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
-
-
-
-	// Unhandled randr events handler.
-	unhandled_randr_label:
-		FLUKE_DEBUG( tinge::warnln("unhandled randr event '", fluke::event_str[XCB_EVENT_RESPONSE_TYPE(old_event.get())], "'!") )
-		old_event = next_event();
-		goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
-
 
 
 	// Create labels and handlers.
@@ -214,7 +207,7 @@ int main() {
 
 	#undef NEW_HANDLER
 
-
+	FLUKE_DEBUG_ERROR("unreachable!")
 
 	return EXIT_SUCCESS;
 }

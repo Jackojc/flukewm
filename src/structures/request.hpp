@@ -79,6 +79,7 @@ namespace fluke {
 	SET_REQUEST(SetInputFocus,          set_input_focus)
 	SET_REQUEST(MapWindow,              map_window)
 	SET_REQUEST(UnmapWindow,            unmap_window)
+	SET_REQUEST(WarpPointer,            warp_pointer)
 	SET_REQUEST(GrabKey,                grab_key)
 	SET_REQUEST(UngrabKey,              ungrab_key)
 	SET_REQUEST(SendEvent,              send_event)
@@ -252,6 +253,17 @@ namespace fluke {
 		return xcb_unmap_window(conn, win);
 	}
 
+
+
+	inline WarpPointerCookie warp_pointer(
+		fluke::Connection& conn,
+		xcb_window_t src, xcb_window_t dest,
+		int16_t src_x, int16_t src_y,
+		uint16_t src_width, uint16_t src_height,
+		int16_t dest_x, int16_t dest_y
+	) {
+		return xcb_warp_pointer(conn, src, dest, src_x, src_y, src_width, src_height, dest_x, dest_y);
+	}
 
 
 

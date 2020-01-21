@@ -51,9 +51,13 @@ namespace fluke {
 		auto e = fluke::event_cast<fluke::FocusInEvent>(std::move(e_));
 		xcb_window_t win = e->event;
 
-		if (e->mode == XCB_NOTIFY_MODE_GRAB || e->mode == XCB_NOTIFY_MODE_UNGRAB
-			|| e->detail == XCB_NOTIFY_DETAIL_POINTER || e->detail == XCB_NOTIFY_DETAIL_POINTER_ROOT
-			|| e->detail == XCB_NOTIFY_DETAIL_NONE) {
+		if (
+			e->mode == XCB_NOTIFY_MODE_GRAB or
+			e->mode == XCB_NOTIFY_MODE_UNGRAB or
+			e->detail == XCB_NOTIFY_DETAIL_POINTER or
+			e->detail == XCB_NOTIFY_DETAIL_POINTER_ROOT or
+			e->detail == XCB_NOTIFY_DETAIL_NONE
+		) {
 			return;
 		}
 
@@ -62,6 +66,14 @@ namespace fluke {
 			"event '", tinge::fg::make_yellow("FOCUS_IN"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
+
+		// Move cursor to center of window.
+		auto [x_, y_, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win)));
+
+		auto x = w / 2;
+		auto y = h / 2;
+
+		fluke::warp_pointer(conn, XCB_NONE, win, 0, 0, 0, 0, x, y);
 
 		// fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
@@ -101,26 +113,28 @@ namespace fluke {
 		)
 
 
-		auto [cursor, geom] = fluke::get(conn,
-			fluke::query_pointer(conn, conn.root()),
-			fluke::get_geometry(conn, win)
-		);
+		// Find the currently focused display to launch the new window on.
+		xcb_window_t focused = fluke::get_focused_window(conn);
+		auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
-		auto [cursor_x, cursor_y] = fluke::as_point(cursor);
+		auto [window_x, window_y, window_w, window_h] = focused_rect;
+		auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
 
-		auto w = geom->width;
-		auto h = geom->height;
-		auto bw = geom->border_width;
+		// Resize window to a percentage of the screen size.
+		auto w = (display_w * fluke::config::NEW_WINDOW_PERCENT) / 100;
+		auto h = (display_h * fluke::config::NEW_WINDOW_PERCENT) / 100;
 
-		// todo: make this work based on currently focused monitor
-		auto screen_w = conn.screen()->width_in_pixels;
-		auto screen_h = conn.screen()->height_in_pixels;
+		// Center the window on the screen.
+		auto x = (display_x + display_w / 2) - (window_x + w / 2);
+		auto y = (display_y + display_h / 2) - (window_y + h / 2);
 
-		auto x = static_cast<uint32_t>(std::clamp(cursor_x - w / 2, 0, screen_w - w - bw));
-		auto y = static_cast<uint32_t>(std::clamp(cursor_y - h / 2, 0, screen_h - h - bw));
-
+		// Register to receive events from the window and resize/move the window.
 		fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
-		fluke::configure_window(conn, win, fluke::XCB_MOVE_RESIZE | XCB_CONFIG_WINDOW_BORDER_WIDTH, x, y, w, h, config::BORDER_SIZE);
+		fluke::configure_window(
+			conn, win,
+			fluke::XCB_MOVE_RESIZE | XCB_CONFIG_WINDOW_BORDER_WIDTH,
+			x, y, w, h, config::BORDER_SIZE
+		);
 	}
 
 
@@ -141,7 +155,7 @@ namespace fluke {
 		if (windows.size() == 0)
 			return;
 
-		fluke::configure_window(conn, windows.front(), XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		fluke::configure_window(conn, windows.back(), XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, windows.back());
 	}
 
@@ -295,7 +309,11 @@ namespace fluke {
 		auto error_code_str = tinge::fg::dim::make_blue(e->error_code);
 
 		// Pretty string with all error codes concatenated.
-		auto all_codes_str = tinge::strcat("major(", major_code_str, "), minor(", minor_code_str, "), error(", error_code_str, ")");
+		auto all_codes_str = tinge::strcat(
+			"major(", major_code_str,
+			"), minor(", minor_code_str,
+			"), error(", error_code_str, ")"
+		);
 
 		// Print the error with some formatting and colours. A bit messy...
 		tinge::errorln(

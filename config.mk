@@ -2,7 +2,7 @@ SRC=main.cpp
 STD=c++17
 
 BUILD_DIR=build
-TARGET=flukewm
+TARGET=fluke
 
 
 # Include & Link

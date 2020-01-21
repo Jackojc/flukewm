@@ -19,7 +19,6 @@ namespace fluke {
 			"'"
 		)
 
-
 		xcb_window_t focused = fluke::get_focused_window(conn);
 
 		auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
@@ -101,7 +100,7 @@ namespace fluke {
 		// Vector of all windows currently mapped.
 		auto windows = fluke::get_mapped_windows(conn);
 
-		if (windows.size() == 0)
+		if (windows.size() <= 0)
 			return;
 
 		// Get the geometry of all mapped windows.
@@ -197,7 +196,7 @@ namespace fluke {
 		// Get all of the mapped windows.
 		auto windows = fluke::get_mapped_windows(conn);
 
-		if (windows.size() == 0)
+		if (windows.size() <= 1)
 			return;
 
 		// Get the currently focused window.
@@ -247,7 +246,7 @@ namespace fluke {
 		// Get all of the mapped windows.
 		auto windows = fluke::get_mapped_windows(conn);
 
-		if (windows.size() == 0)
+		if (windows.size() <= 1)
 			return;
 
 
@@ -265,8 +264,10 @@ namespace fluke {
 
 		// Get the usable display area.
 		// Leave a gap for window borders.
-		display_w -= fluke::config::BORDER_SIZE * 2;
-		display_h -= fluke::config::BORDER_SIZE * 2;
+		display_x += fluke::config::GAP + fluke::config::GUTTER_LEFT;
+		display_y += fluke::config::GAP + fluke::config::GUTTER_TOP;
+		display_w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP + fluke::config::GUTTER_RIGHT;
+		display_h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP + fluke::config::GUTTER_BOTTOM;
 
 
 		// Move focused window to master area on the left.
@@ -275,9 +276,12 @@ namespace fluke {
 
 			display_x,
 			display_y,
-			display_w / 2 - (fluke::config::BORDER_SIZE * 2),
+			std::ceil(display_w / 2.f) - fluke::config::GAP * 2 - fluke::config::BORDER_SIZE * 2,
 			display_h
 		);
+
+
+		FLUKE_DEBUG_NOTICE(slave_height)
 
 
 		// Stack up all of the slave windows on the right.
@@ -289,9 +293,10 @@ namespace fluke {
 			fluke::configure_window(
 				conn, win, fluke::XCB_MOVE_RESIZE,
 
-				display_x + display_w / 2,
+				std::ceil(display_x + display_w / 2.f),
 				sliding_y,
-				display_w / 2,
+
+				std::ceil(display_w / 2.f) - fluke::config::GAP * 2,
 				slave_height
 			);
 
@@ -304,7 +309,5 @@ namespace fluke {
 	inline void action_layout_monocle(fluke::Connection& conn) {
 
 	}
-
-
 }
 

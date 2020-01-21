@@ -10,27 +10,6 @@
 
 namespace fluke {
 	/*
-		Macro for toggling code on/off depending on whether we are in release or
-		debug builds.
-
-		example:
-			FLUKE_DEBUG( std::cerr << "debug string\n" )
-	*/
-	#ifdef NDEBUG
-		#define FLUKE_DEBUG(x) { }
-	#else
-		#define FLUKE_DEBUG(x) { x; }
-	#endif
-
-
-	#define FLUKE_DEBUG_NOTICE(...) FLUKE_DEBUG( tinge::noticeln(__VA_ARGS__) )
-	#define FLUKE_DEBUG_WARN(...) FLUKE_DEBUG( tinge::warnln(__VA_ARGS__) )
-	#define FLUKE_DEBUG_ERROR(...) FLUKE_DEBUG( tinge::errorln(__VA_ARGS__) )
-	#define FLUKE_DEBUG_SUCCESS(...) FLUKE_DEBUG( tinge::successln(__VA_ARGS__) )
-
-
-
-	/*
 		Converts a numeric argument to hexadecimal format with 0x prepended.
 
 		example:
