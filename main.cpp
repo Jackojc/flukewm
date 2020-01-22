@@ -91,121 +91,112 @@ int main() {
 	fluke::register_keybindings(conn, fluke::config::keys);
 
 
-	// Make sure we are synced up with X before we start handling events.
-	conn.sync();
-
 	// Set jump point, when a signal handler gets activated, it will jump here.
 	if (status = setjmp(exit_jump); status) {
-		FLUKE_DEBUG_SUCCESS("signal caught, exiting.")
-		fluke::on_exit(conn);
-		return EXIT_SUCCESS;
+		FLUKE_DEBUG_SUCCESS("signal caught.")
+		goto exit;
 	}
 
 
-
-	// Define event handlers. NEW_HANDLER(event_id, handler_name)
-	#define EVENT_HANDLERS \
-		NEW_HANDLER( 0,                     event_error             ) \
-		NEW_HANDLER( XCB_ENTER_NOTIFY,      event_enter_notify      ) \
-		NEW_HANDLER( XCB_LEAVE_NOTIFY,      event_leave_notify      ) \
-		NEW_HANDLER( XCB_FOCUS_IN,          event_focus_in          ) \
-		NEW_HANDLER( XCB_FOCUS_OUT,         event_focus_out         ) \
-		NEW_HANDLER( XCB_CREATE_NOTIFY,     event_create_notify     ) \
-		NEW_HANDLER( XCB_DESTROY_NOTIFY,    event_destroy_notify    ) \
-		NEW_HANDLER( XCB_MAP_REQUEST,       event_map_request       ) \
-		NEW_HANDLER( XCB_UNMAP_NOTIFY,      event_unmap_notify      ) \
-		NEW_HANDLER( XCB_CONFIGURE_REQUEST, event_configure_request ) \
-		NEW_HANDLER( XCB_KEY_PRESS,         event_keypress          ) \
-		NEW_HANDLER( XCB_PROPERTY_NOTIFY,   event_property_notify   ) \
-		NEW_HANDLER( XCB_CLIENT_MESSAGE,    event_client_message    )
-
-
-
-	// Returns a lookup table.
-	constexpr auto generate_table = [] (const auto& init, const auto& args) {
-		using arr_t = std::array<void*, XCB_NO_OPERATION>;
-		arr_t labels{};
-
-		for (auto& x: labels)
-			x = init;
-
-		for (auto [id, label]: args)
-			labels.at(static_cast<arr_t::size_type>(id)) = label;
-
-		return labels;
-	};
-
-
-
-	// Generate a lookup table that maps event types -> labels.
-	FLUKE_DEBUG_SUCCESS("setting up events lookup table.")
-	#define NEW_HANDLER(event_id, name) std::pair<decltype(XCB_ENTER_NOTIFY), void*>{ event_id, &&name##_label },
-		constexpr auto labels = generate_table(&&unhandled_label, std::array{ EVENT_HANDLERS });
-	#undef NEW_HANDLER
-
-
-
-	// Get the next event (blocking).
-	auto next_event = [&conn] () {
-		conn.flush(); // Flush pending requests.
-
-		auto event = fluke::Event{xcb_wait_for_event(conn)};
-
-		// Check for errors.
-		if (xcb_connection_has_error(conn) != 0)
-			tinge::errorln("cannot connect to the X server!");
-
-		if (not event)
-			tinge::errorln("event returned nullptr, this shouldnt happen!");
-
-		return event;
-	};
-
-
-
-	// Retrieve first event.
 	FLUKE_DEBUG_SUCCESS("starting main event loop.")
 	fluke::on_launch(conn);
-	auto old_event = next_event();  // keep old event so it can be passed to handler
 
+	while (true) {
+		conn.flush();
 
+		auto event = fluke::Event{xcb_wait_for_event(conn), &std::free};
+		auto ev_type = XCB_EVENT_RESPONSE_TYPE(event.get());
+		auto randr_ev_type = randr_base - ev_type;
 
-	// Handle first event.
-	goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
-
-
-
-	// Default handler.
-	unhandled_label:
-		// Handle randr events, these checks are exhaustive so we
-		// do not need to check for unhandled randr events.
-		if (XCB_EVENT_RESPONSE_TYPE(old_event.get()) == randr_base + XCB_RANDR_SCREEN_CHANGE_NOTIFY) {
-			fluke::event_randr_screen_change_notify(conn, std::move(old_event));
-
-		} else if (XCB_EVENT_RESPONSE_TYPE(old_event.get()) == randr_base + XCB_RANDR_NOTIFY) {
-			fluke::event_randr_notify(conn, std::move(old_event));
-
-		// Unhandled events.
-		} else {
-			FLUKE_DEBUG_WARN("unhandled event '", fluke::event_str[XCB_EVENT_RESPONSE_TYPE(old_event.get())], "'!")
+		// Check for errors.
+		if (xcb_connection_has_error(conn) != 0) {
+			tinge::errorln("cannot connect to the X server!");
+			break;
 		}
 
-		old_event = next_event();
-		goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
+		if (not event) {
+			tinge::errorln("event returned nullptr, this shouldnt happen!");
+			continue;
+		}
 
 
-	// Create labels and handlers.
-	#define NEW_HANDLER(event_id, name) \
-		name##_label: \
-			fluke::name(conn, std::move(old_event)); \
-			old_event = next_event(); \
-			goto* labels[XCB_EVENT_RESPONSE_TYPE(old_event.get())];
+		// Handle all events.
+		switch (ev_type) {
+			case 0:
+				fluke::event_error(conn, std::move(event));
+				continue;
 
-		EVENT_HANDLERS
+			case XCB_ENTER_NOTIFY:
+				fluke::event_enter_notify(conn, std::move(event));
+				continue;
 
-	#undef NEW_HANDLER
+			case XCB_LEAVE_NOTIFY:
+				fluke::event_leave_notify(conn, std::move(event));
+				continue;
 
-	FLUKE_DEBUG_ERROR("unreachable!")
+			case XCB_FOCUS_IN:
+				fluke::event_focus_in(conn, std::move(event));
+				continue;
+
+			case XCB_FOCUS_OUT:
+				fluke::event_focus_out(conn, std::move(event));
+				continue;
+
+			case XCB_CREATE_NOTIFY:
+				fluke::event_create_notify(conn, std::move(event));
+				continue;
+
+			case XCB_DESTROY_NOTIFY:
+				fluke::event_destroy_notify(conn, std::move(event));
+				continue;
+
+			case XCB_MAP_REQUEST:
+				fluke::event_map_request(conn, std::move(event));
+				continue;
+
+			case XCB_UNMAP_NOTIFY:
+				fluke::event_unmap_notify(conn, std::move(event));
+				continue;
+
+			case XCB_CONFIGURE_REQUEST:
+				fluke::event_configure_request(conn, std::move(event));
+				continue;
+
+			case XCB_KEY_PRESS:
+				fluke::event_keypress(conn, std::move(event));
+				continue;
+
+			case XCB_PROPERTY_NOTIFY:
+				fluke::event_property_notify(conn, std::move(event));
+				continue;
+
+			case XCB_CLIENT_MESSAGE:
+				fluke::event_client_message(conn, std::move(event));
+				continue;
+		}
+
+
+		// Handle randr events, these checks are exhaustive so we
+		// do not need to check for unhandled randr events.
+		switch (randr_ev_type) {
+			case XCB_RANDR_SCREEN_CHANGE_NOTIFY:
+				fluke::event_randr_screen_change_notify(conn, std::move(event));
+				continue;
+
+			case XCB_RANDR_NOTIFY:
+				fluke::event_randr_notify(conn, std::move(event));
+				continue;
+		}
+
+
+		// Warn about unhandled events.
+		FLUKE_DEBUG_WARN("unhandled event '", fluke::event_str[ev_type], "'!")
+	}
+
+	exit:
+
+	FLUKE_DEBUG_SUCCESS("exiting.")
+	fluke::on_exit(conn);
 
 	return EXIT_SUCCESS;
 }
