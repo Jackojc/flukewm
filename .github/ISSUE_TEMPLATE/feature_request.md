@@ -7,11 +7,25 @@ assignees: Jackojc
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**Description of the feature.**
+Describe in detail the feature you envision.
+Things to consider:
+- diagrams
+- pseudo-code
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+**Why do you think this feature should be added to fluke?**
+Explain why you think this feature would make a good addition to fluke.
+Things to consider:
+- does it improve workflow?
+- will it improve other features also?
+- is it relatively easy to implement?
+- will it fix unexpected behavior?
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+**Do you think this feature will be important for other users?**
+Would this feature be worth implementing in the core project or as an optional patch?
+
+**How will this feature impact the efficiency of your workflow?**
+Describe how this feature might speed up or improve the efficiency of your workflow.
+
+**Is this feature available in any other projects?**
+A link to some source for a similar implementation of your request may aid in efforts to implement the feature in fluke.
