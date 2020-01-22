@@ -193,7 +193,7 @@ namespace fluke {
 		if (windows.size() == 0)
 			return;
 
-		xcb_window_t new_win = windows.back();
+		const xcb_window_t new_win = windows.back();
 		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
@@ -377,14 +377,14 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("ERROR"), "'" )
 
 		// Make error names bright blue.
-		const auto major = tinge::fg::bright::make_blue(fluke::request_str[e->major_code]);
-		const auto error = tinge::fg::bright::make_blue(fluke::error_str[e->error_code]);
-		const auto help  = fluke::help_str[e->error_code];
+		const auto major = tinge::fg::bright::make_blue(fluke::request_str[major_code]);
+		const auto error = tinge::fg::bright::make_blue(fluke::error_str[error_code]);
+		const auto help  = fluke::help_str[error_code];
 
 		// Make error codes dim blue.
-		const auto major_code_str = tinge::fg::dim::make_blue(e->major_code);
-		const auto minor_code_str = tinge::fg::dim::make_blue(e->minor_code);
-		const auto error_code_str = tinge::fg::dim::make_blue(e->error_code);
+		const auto major_code_str = tinge::fg::dim::make_blue(major_code);
+		const auto minor_code_str = tinge::fg::dim::make_blue(minor_code);
+		const auto error_code_str = tinge::fg::dim::make_blue(error_code);
 
 		// Pretty string with all error codes concatenated.
 		const auto all_codes_str = tinge::strcat(

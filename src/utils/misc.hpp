@@ -382,6 +382,9 @@ namespace fluke {
 	*/
 	template <size_t N>
 	inline void register_keybindings(fluke::Connection& conn, const fluke::Keys<N>& keys) {
+		if constexpr(N == 0)
+			return;
+
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("register_keybindings"), "'")
 
 		// Toggleable modifiers.

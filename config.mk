@@ -29,7 +29,7 @@ ifeq ($(debug),no)
 
 else ifeq ($(debug),yes)
 	symbols ?= yes
-	PROGRAM_CXXFLAGS=-Og -march=native
+	PROGRAM_CXXFLAGS=-Og -march=native -fsanitize=address -fsanitize=undefined -fsanitize=leak
 
 else
 $(error debug should be either yes or no)
