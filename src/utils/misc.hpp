@@ -461,5 +461,47 @@ namespace fluke {
 	inline auto get_event_type(const fluke::Event& e) {
 		return XCB_EVENT_RESPONSE_TYPE(e.get());
 	}
+
+
+
+	/*
+		Get the display area when taking into account the gutters
+		around the display edge.
+
+		example:
+			auto [x, y, w, h] = fluke::get_adjusted_display_rect(
+				fluke::get_nearest_display_rect(conn, focused_rect)
+			);
+	*/
+	inline auto get_adjusted_display_rect(const fluke::Rect& r) {
+		auto [x, y, w, h] = r;
+
+		x += fluke::config::GUTTER_LEFT;
+		y += fluke::config::GUTTER_TOP;
+		w -= fluke::config::GUTTER_RIGHT + fluke::config::GUTTER_LEFT;
+		h -= fluke::config::GUTTER_BOTTOM + fluke::config::GUTTER_TOP;
+
+		return fluke::Rect{ x, y, w, h };
+	}
+
+
+
+	/*
+		Get the window size when taking into account the border
+		size and window gaps.
+
+		example:
+			const auto [x, y, w, h] = fluke::get_adjusted_window_rect({ ... });
+	*/
+	inline auto get_adjusted_window_rect(const fluke::Rect& r) {
+		auto [x, y, w, h] = r;
+
+		x += fluke::config::GAP;
+		y += fluke::config::GAP;
+		w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2;
+		h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2;
+
+		return fluke::Rect{ x, y, w, h };
+	};
 }
 

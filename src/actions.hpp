@@ -269,22 +269,34 @@ namespace fluke {
 
 	// Window snapping
 	enum {
-		SNAP_LEFT,
-		SNAP_RIGHT,
-		SNAP_TOP,
-		SNAP_BOTTOM,
+		SNAP_SIDE_LEFT,
+		SNAP_SIDE_RIGHT,
+		SNAP_SIDE_TOP,
+		SNAP_SIDE_BOTTOM,
+
+		SNAP_CORNER_TOPLEFT,
+		SNAP_CORNER_TOPRIGHT,
+		SNAP_CORNER_BOTTOMRIGHT,
+		SNAP_CORNER_BOTTOMLEFT,
 	};
 
 	constexpr const char* side_str[] = {
-		"SNAP_LEFT",
-		"SNAP_RIGHT",
-		"SNAP_TOP",
-		"SNAP_BOTTOM",
+		"SNAP_SIDE_LEFT",
+		"SNAP_SIDE_RIGHT",
+		"SNAP_SIDE_TOP",
+		"SNAP_SIDE_BOTTOM",
+
+		"SNAP_CORNER_TOPLEFT",
+		"SNAP_CORNER_TOPRIGHT",
+		"SNAP_CORNER_BOTTOMRIGHT",
+		"SNAP_CORNER_BOTTOMLEFT",
 	};
 
-	inline void action_snap_side(fluke::Connection& conn, int side) {
+	inline void action_snap(fluke::Connection& conn, int side) {
+		namespace conf = fluke::config;
+
 		FLUKE_DEBUG_NOTICE(
-			"action '", tinge::fg::make_yellow("SNAP_SIDE"),
+			"action '", tinge::fg::make_yellow("SNAP"),
 			"' with arg(s) '", tinge::fg::make_yellow(side_str[side]), "'"
 		)
 
@@ -295,27 +307,12 @@ namespace fluke {
 
 		// Get focused display.
 		const auto [window_x, window_y, window_w, window_h] = focused_rect;
-		auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
-
 
 		// Get usable screen area.
 		FLUKE_DEBUG_NOTICE_SUB("calculate offsets.");
-		display_x += fluke::config::GUTTER_LEFT;
-		display_y += fluke::config::GUTTER_TOP;
-		display_w -= fluke::config::GUTTER_RIGHT;
-		display_h -= fluke::config::GUTTER_BOTTOM;
 
-
-		const auto get_window_rect = [&] (const fluke::Rect& r) {
-			auto [x, y, w, h] = r;
-
-			x += fluke::config::GAP;
-			y += fluke::config::GAP;
-			w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2;
-			h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2;
-
-			return fluke::Rect{ x, y, w, h };
-		};
+		const auto [display_x, display_y, display_w, display_h] =
+			fluke::get_adjusted_display_rect(fluke::get_nearest_display_rect(conn, focused_rect));
 
 
 		// Rectangles that window will be moved into.
@@ -351,21 +348,49 @@ namespace fluke {
 				display_w,
 				display_h / 2
 			},
+
+			// Top left corner.
+			fluke::Rect{
+				display_x,
+				display_y,
+				display_w / 2,
+				display_h / 2
+			},
+
+			// Top right corner.
+			fluke::Rect{
+				display_x + display_w / 2,
+				display_y,
+				display_w / 2,
+				display_h / 2
+			},
+
+			// Bottom right corner.
+			fluke::Rect{
+				display_x + display_w / 2,
+				display_y + display_h / 2,
+				display_w / 2,
+				display_h / 2
+			},
+
+			// Bottom left corner.
+			fluke::Rect{
+				display_x,
+				display_y + display_h / 2,
+				display_w / 2,
+				display_h / 2
+			}
 		};
 
-		FLUKE_DEBUG_NOTICE_SUB("snap window.");
 
 		// Get the rect of the side we wish to move our window into.
-		const auto [x, y, w, h] = get_window_rect(side_rects.at(static_cast<decltype(side_rects)::size_type>(side)));
+		FLUKE_DEBUG_NOTICE_SUB("snap window.");
+
+		const auto [x, y, w, h] =
+			fluke::get_adjusted_window_rect(side_rects.at(static_cast<decltype(side_rects)::size_type>(side)));
+
 		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, x, y, w, h);
 	}
-
-
-
-	inline void action_snap_corner(fluke::Connection&) {
-
-	}
-
 
 
 
@@ -423,7 +448,6 @@ namespace fluke {
 
 		// Get the rect of the nearest display to the focused window.
 		auto display_rect = fluke::get_nearest_display_rect(conn, focused_rect);
-		auto [display_x, display_y, display_w, display_h] = display_rect;
 
 
 		// Filter out windows which are not on the same display as the focused window.
@@ -435,31 +459,27 @@ namespace fluke {
 
 
 
+		// Get the usable display area.
+		const auto [display_x, display_y, display_w, display_h] =
+			fluke::get_adjusted_display_rect(display_rect);
+
+
+
 		// Get the height that each slave window should be.
 		FLUKE_DEBUG_NOTICE_SUB("calculating offsets.")
-		const int slave_height = (display_h / (windows.size() - 1)) - (fluke::config::GAP * 2 - fluke::config::BORDER_SIZE * 2);
-
-		// Get the usable display area.
-		// Leave a gap for window borders.
-		display_x += fluke::config::GAP + fluke::config::GUTTER_LEFT;
-		display_y += fluke::config::GAP + fluke::config::GUTTER_TOP;
-		display_w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_RIGHT;
-		display_h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_BOTTOM;
-
-
+		const int slave_height = (display_h / (windows.size() - 1));
 		int sliding_y = display_y;  // Keep track of Y position so we can stack windows on the right.
 
 
 		// Move focused window to master area on the left.
 		FLUKE_DEBUG_NOTICE_SUB("tile the master window.")
-		fluke::configure_window(
-			conn, focused, fluke::XCB_MOVE_RESIZE,
 
-			display_x,
-			display_y,
-			std::ceil(display_w / 2.f) - (fluke::config::BORDER_SIZE * 2),
-			display_h
-		);
+		{
+			const auto [x, y, w, h] =
+				fluke::get_adjusted_window_rect({ display_x, display_y, display_w / 2, display_h });
+
+			fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, x, y, w, h);
+		}
 
 
 		// Stack up all of the slave windows on the right.
@@ -469,21 +489,23 @@ namespace fluke {
 				continue;
 
 			// Move window to empty space.
-			fluke::configure_window(
-				conn, win, fluke::XCB_MOVE_RESIZE,
+			{
+				const auto [x, y, w, h] =
+					fluke::get_adjusted_window_rect({
+						display_x + display_w / 2,
+						sliding_y,
+						display_w / 2,
+						slave_height
+					});
 
-				std::ceil(display_x + display_w / 2.f) + fluke::config::GAP,
-				sliding_y,
-
-				std::ceil(display_w / 2.f) - fluke::config::GAP,
-				slave_height
-			);
+				fluke::configure_window(conn, win, fluke::XCB_MOVE_RESIZE, x, y, w, h);
+			}
 
 			// Increment Y position for next window.
-			sliding_y += slave_height + (fluke::config::BORDER_SIZE * 2) + fluke::config::GAP;
+			sliding_y += slave_height;
 		}
-
 	}
+
 
 	inline void action_layout_monocle(fluke::Connection&) {
 
