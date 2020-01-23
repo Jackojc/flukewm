@@ -42,8 +42,6 @@
 #include <utils/keys.hpp>
 #include <utils/misc.hpp>
 
-#include <X11/keysym.h>
-#include <X11/XF86keysym.h>
 #include <actions.hpp>
 
 #include <config/keybindings.hpp>

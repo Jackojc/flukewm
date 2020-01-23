@@ -4,10 +4,10 @@
 #include <vector>
 #include <fluke.hpp>
 
-extern "C" {
-	#include <X11/keysym.h>
-	#include <X11/XF86keysym.h>
-}
+// extern "C" {
+// 	#include <X11/keysym.h>
+// 	#include <X11/XF86keysym.h>
+// }
 
 
 namespace fluke {
@@ -35,7 +35,7 @@ namespace fluke {
 
 	// Keysyms
 	namespace keys {
-		constexpr auto alt         = XCB_MOD_MASK_1;
+		constexpr uint32_t alt         = XCB_MOD_MASK_1;
 		constexpr uint32_t num_lock    = XCB_MOD_MASK_2;
 		constexpr uint32_t altgr       = XCB_MOD_MASK_3;
 		constexpr uint32_t super       = XCB_MOD_MASK_4;

@@ -48,16 +48,4 @@ namespace fluke {
 		XCB_EVENT_MASK_FOCUS_CHANGE |
 		XCB_EVENT_MASK_STRUCTURE_NOTIFY
 	;
-
-
-	constexpr uint32_t XCB_MASK_ALT         = XCB_MOD_MASK_1;
-	constexpr uint32_t XCB_MASK_NUM_LOCK    = XCB_MOD_MASK_2;
-	constexpr uint32_t XCB_MASK_ALTGR       = XCB_MOD_MASK_3;
-	constexpr uint32_t XCB_MASK_SUPER       = XCB_MOD_MASK_4;
-	constexpr uint32_t XCB_MASK_SCROLL_LOCK = XCB_MOD_MASK_5;
-	constexpr uint32_t XCB_MASK_CONTROL     = XCB_MOD_MASK_CONTROL;
-	constexpr uint32_t XCB_MASK_SHIFT       = XCB_MOD_MASK_SHIFT;
-	constexpr uint32_t XCB_MASK_CAPS_LOCK   = XCB_MOD_MASK_LOCK;
-	constexpr uint32_t XCB_MASK_ANY         = XCB_MOD_MASK_ANY;
-
 }

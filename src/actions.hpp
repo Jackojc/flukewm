@@ -300,10 +300,22 @@ namespace fluke {
 
 		// Get usable screen area.
 		FLUKE_DEBUG_NOTICE_SUB("calculate offsets.");
-		display_x += fluke::config::GAP + fluke::config::GUTTER_LEFT;
-		display_y += fluke::config::GAP + fluke::config::GUTTER_TOP;
-		display_w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_RIGHT;
-		display_h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2 + fluke::config::GUTTER_BOTTOM;
+		display_x += fluke::config::GUTTER_LEFT;
+		display_y += fluke::config::GUTTER_TOP;
+		display_w -= fluke::config::GUTTER_RIGHT;
+		display_h -= fluke::config::GUTTER_BOTTOM;
+
+
+		const auto get_window_rect = [&] (const fluke::Rect& r) {
+			auto [x, y, w, h] = r;
+
+			x += fluke::config::GAP;
+			y += fluke::config::GAP;
+			w -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2;
+			h -= fluke::config::BORDER_SIZE * 2 + fluke::config::GAP * 2;
+
+			return fluke::Rect{ x, y, w, h };
+		};
 
 
 		// Rectangles that window will be moved into.
@@ -312,15 +324,15 @@ namespace fluke {
 			fluke::Rect{
 				display_x,
 				display_y,
-				display_w / 2 - fluke::config::BORDER_SIZE * 2,
+				display_w / 2,
 				display_h
 			},
 
 			// Right side.
 			fluke::Rect{
-				display_x + display_w / 2 + fluke::config::GAP * 2,
+				display_x + display_w / 2,
 				display_y,
-				display_w / 2 - fluke::config::BORDER_SIZE * 2,
+				display_w / 2,
 				display_h
 			},
 
@@ -329,22 +341,22 @@ namespace fluke {
 				display_x,
 				display_y,
 				display_w,
-				display_h / 2 - fluke::config::BORDER_SIZE * 2
+				display_h / 2
 			},
 
 			// Bottom side.
 			fluke::Rect{
 				display_x,
-				display_y + display_h / 2 + fluke::config::GAP * 2,
+				display_y + display_h / 2,
 				display_w,
-				display_h / 2 - fluke::config::BORDER_SIZE * 2
+				display_h / 2
 			},
 		};
 
 		FLUKE_DEBUG_NOTICE_SUB("snap window.");
 
 		// Get the rect of the side we wish to move our window into.
-		const auto [x, y, w, h] = side_rects.at(static_cast<decltype(side_rects)::size_type>(side));
+		const auto [x, y, w, h] = get_window_rect(side_rects.at(static_cast<decltype(side_rects)::size_type>(side)));
 		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, x, y, w, h);
 	}
 
