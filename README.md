@@ -1,4 +1,6 @@
-﻿# Fluke
+﻿<p align=center><img alt="logo" src="logos/fluke_transparent.png" width=30%/></p>
+
+# Fluke
 A simple, fast and efficient window manager for X, made with C++ & XCB.
 
 > Note: This project is still under heavy development, so do not expect a fully working experience out of the box. Feedback & critsism are welcome!
