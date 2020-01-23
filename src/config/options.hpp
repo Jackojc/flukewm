@@ -36,12 +36,12 @@ namespace fluke::config {
 
 	// For tiling, you can offset a certain number of pixels
 	// to reserve space for a dock or statusbar.
-	constexpr auto GUTTER_LEFT   = 0;
-	constexpr auto GUTTER_RIGHT  = 0;
-	constexpr auto GUTTER_TOP    = 0;
-	constexpr auto GUTTER_BOTTOM = 0;
+	constexpr auto GUTTER_LEFT   = 2;
+	constexpr auto GUTTER_RIGHT  = 2;
+	constexpr auto GUTTER_TOP    = 2;
+	constexpr auto GUTTER_BOTTOM = 2;
 
-	constexpr auto GAP = 2;
+	constexpr auto GAP = 0;
 }
 
 

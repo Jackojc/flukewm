@@ -382,17 +382,14 @@ namespace fluke {
 	*/
 	template <size_t N>
 	inline void register_keybindings(fluke::Connection& conn, const fluke::Keys<N>& keys) {
-		if constexpr(N == 0)
-			return;
-
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("register_keybindings"), "'")
 
 		// Toggleable modifiers.
 		constexpr std::array modifiers{
 			uint32_t{0},
-			uint32_t{fluke::XCB_MASK_CAPS_LOCK},
-			uint32_t{fluke::XCB_MASK_NUM_LOCK},
-			uint32_t{fluke::XCB_MASK_SCROLL_LOCK},
+			uint32_t{fluke::keys::caps_lock},
+			uint32_t{fluke::keys::num_lock},
+			uint32_t{fluke::keys::scroll_lock},
 		};
 
 		// Get every combination of modifiers.
@@ -410,7 +407,7 @@ namespace fluke {
 		}
 
 		// Ungrab any keys which are already grabbed.
-		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), fluke::XCB_MASK_ANY);
+		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), XCB_MOD_MASK_ANY);
 
 		// Register our keybindings.
 		FLUKE_DEBUG_NOTICE_SUB("grab keys.")
@@ -438,6 +435,31 @@ namespace fluke {
 	*/
 	inline auto get_focused_window(fluke::Connection& conn) {
 		return fluke::get(conn, fluke::get_input_focus(conn))->focus;
+	}
+
+
+
+	/*
+		Block until next event, wrap it in fluke::Event and return.
+
+		example:
+			auto event = fluke::get_next_event(conn);
+	*/
+	inline auto get_next_event(fluke::Connection& conn) {
+		return fluke::Event{xcb_wait_for_event(conn), &std::free};
+	}
+
+
+
+	/*
+		Get the event type of a generic event structure.
+
+		example:
+			auto event = fluke::get_next_event(conn);
+			auto ev_type = fluke::get_event_type(event);
+	*/
+	inline auto get_event_type(const fluke::Event& e) {
+		return XCB_EVENT_RESPONSE_TYPE(e.get());
 	}
 }
 
