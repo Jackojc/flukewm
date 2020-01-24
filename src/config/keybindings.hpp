@@ -56,7 +56,8 @@ namespace fluke::config {
 		fluke::Key{ keys::super | keys::control | keys::shift, keys::down,  ACTION(fluke::action_snap, SNAP_CORNER_BOTTOMLEFT) },
 
 		// Tiling & Misc.
-		fluke::Key{ keys::super, keys::t, ACTION(fluke::action_layout_masterslave, MASTER_LEFT) },
+		fluke::Key{ keys::super, keys::t, ACTION(fluke::action_layout_masterslave, MASTER_LEFT, 60) },
+		fluke::Key{ keys::super | keys::shift, keys::t, ACTION(fluke::action_layout_masterslave, MASTER_RIGHT, 60) },
 		fluke::Key{ keys::super, keys::c, ACTION(fluke::action_center) },
 
 		// Launch programs.

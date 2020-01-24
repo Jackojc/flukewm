@@ -501,5 +501,12 @@ namespace fluke {
 
 		return fluke::Rect{ x, y, w, h };
 	};
+
+
+
+	inline auto get_rect_center(const fluke::Rect& r) {
+		const auto [x, y, w, h] = r;
+		return fluke::Point{ x + w / 2, y + h / 2 };
+	}
 }
 

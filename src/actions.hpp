@@ -134,7 +134,12 @@ namespace fluke {
 
 		// Get geometry of currently focused window.
 		FLUKE_DEBUG_NOTICE_SUB("get reference point on focused window.");
-		const auto [fx, fy, fw, fh] = fluke::as_rect(geoms.at(i));
+		// const auto [fx, fy, fw, fh] = fluke::as_rect(geoms.at(i));
+		const auto focused_rect = fluke::as_rect(geoms[i]);
+		const auto [fx, fy, fw, fh] = focused_rect;
+
+		// const auto focused_center = fluke::get_rect_center(focused_rect);
+
 
 		// Get the midpoint of the relevant side of the currently focused window.
 		const std::array fsides{
@@ -149,6 +154,7 @@ namespace fluke {
 
 		// Store distances to windows and the associated window IDs.
 		std::vector<std::pair<xcb_window_t, int>> distances;
+		distances.reserve(windows.size());
 
 
 		// Loop over all windows and get the midpoint of all of their four sides.
@@ -161,15 +167,40 @@ namespace fluke {
 
 			const auto [x, y, w, h] = fluke::as_rect(geom);
 
-			// Find which side is closest to focused window.
+			// Get point on the appropriate side of this window.
+			// Note that right/left & top/down are reversed compared to
+			// the array above `fsides`.
+			// This is because if we are focusing right, we want to check
+			// the left side of other windows etc.
 			const std::array sides{
-				fluke::distance(fpoint, right_side(x, y, w, h)),
-				fluke::distance(fpoint, left_side(x, y, w, h)),
-				fluke::distance(fpoint, bottom_side(x, y, w, h)),
-				fluke::distance(fpoint, top_side(x, y, w, h)),
+				right_side(x, y, w, h),
+				left_side(x, y, w, h),
+				bottom_side(x, y, w, h),
+				top_side(x, y, w, h),
 			};
 
-			distances.emplace_back(win, sides.at(static_cast<decltype(fsides)::size_type>(dir)));
+			const auto point = sides.at(static_cast<decltype(sides)::size_type>(dir));
+
+
+			// Check if the window we are currently checking is present in the direction
+			// we wish to focus.
+			// For example: if we are focusing to the right, we only consider windows
+			// which are to the right of the focused window.
+			const std::array search_space {
+				point.x < fpoint.x,  // Left.
+				point.x > fpoint.x,  // Right.
+				point.y < fpoint.y,  // Top.
+				point.y > fpoint.y,  // Bottom.
+			};
+
+			if (not search_space.at(static_cast<decltype(search_space)::size_type>(dir)))
+				continue;
+
+
+			// If the window is valid, calculate the distance between the reference
+			// point on the focused window to the point on the appropriate side of
+			// the window we are checking. Add it to the vector of distances.
+			distances.emplace_back(win, fluke::distance(fpoint, point));
 		}
 
 		// Find window with nearest distance.
@@ -408,7 +439,7 @@ namespace fluke {
 		"MASTER_RIGHT",
 	};
 
-	inline void action_layout_masterslave(fluke::Connection& conn, int master_side) {
+	inline void action_layout_masterslave(fluke::Connection& conn, int master_side, int master_size) {
 		FLUKE_DEBUG_NOTICE(
 			"action '", tinge::fg::make_yellow("LAYOUT_MASTERSLAVE"),
 			"' with arg(s) '", tinge::fg::make_yellow(master_str[master_side]), "'"
@@ -422,10 +453,10 @@ namespace fluke {
 			return;
 
 
-
 		// Get focused window ID.
 		FLUKE_DEBUG_NOTICE_SUB("getting the focused window.")
 		const xcb_window_t focused = fluke::get_focused_window(conn);
+
 
 
 		// Get the geometry of all mapped windows.
@@ -438,6 +469,7 @@ namespace fluke {
 
 			return fluke::get_geometry( conn, win );
 		}, windows);
+
 
 
 		// Get focused window rect.
@@ -456,45 +488,59 @@ namespace fluke {
 		}), windows.end());
 
 
-
 		// Get the usable display area.
 		const auto [display_x, display_y, display_w, display_h] =
 			fluke::get_adjusted_display_rect(display_rect);
 
 
-
-		// Get the height that each slave window should be.
-		FLUKE_DEBUG_NOTICE_SUB("calculating offsets.")
-		const int slave_height = (display_h / (windows.size() - 1));
-		int sliding_y = display_y;  // Keep track of Y position so we can stack windows on the right.
-
-
 		// Move focused window to master area on the left.
 		FLUKE_DEBUG_NOTICE_SUB("tile the master window.")
-
+		const auto master_w = (display_w * master_size) / 100;
 		{
+			// Rectangle for master window dependent on `master_side`.
+			const std::array master_rects{
+				fluke::Rect{ display_x, display_y, master_w, display_h },  // Left
+				fluke::Rect{ display_x + display_w - master_w, display_y, master_w, display_h },  // Right
+			};
+
+			// Get adjusted rect for master window, taking into account gaps/borders/gutters.
 			const auto [x, y, w, h] =
-				fluke::get_adjusted_window_rect({ display_x, display_y, display_w / 2, display_h });
+				fluke::get_adjusted_window_rect(master_rects.at(
+					static_cast<decltype(master_rects)::size_type>(master_side)
+				));
 
 			fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, x, y, w, h);
 		}
 
 
+
 		// Stack up all of the slave windows on the right.
 		FLUKE_DEBUG_NOTICE_SUB("tile the slave windows.")
+
+
+		// Get the height that each slave window should be.
+		FLUKE_DEBUG_NOTICE_SUB("calculating offsets.")
+		const int slave_height = (display_h / (windows.size() - 1));
+		int sliding_y = display_y;  // Keep track of Y position so we can stack slave windows.
+
+
 		for (auto win: windows) {
 			if (win == focused)
 				continue;
 
 			// Move window to empty space.
 			{
+				// Rectangle for slave windows, opposite to `master_side`.
+				const std::array slave_rects{
+					fluke::Rect{ display_x + master_w, sliding_y, display_w - master_w, slave_height },  // Right
+					fluke::Rect{ display_x, sliding_y, display_w - master_w, slave_height },  // Left
+				};
+
+				// Adjusted rect for slave window.
 				const auto [x, y, w, h] =
-					fluke::get_adjusted_window_rect({
-						display_x + display_w / 2,
-						sliding_y,
-						display_w / 2,
-						slave_height
-					});
+					fluke::get_adjusted_window_rect(slave_rects.at(
+						static_cast<decltype(slave_rects)::size_type>(master_side)
+					));
 
 				fluke::configure_window(conn, win, fluke::XCB_MOVE_RESIZE, x, y, w, h);
 			}
