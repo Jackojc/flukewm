@@ -24,10 +24,6 @@ namespace fluke {
 			"event '", tinge::fg::make_yellow("ENTER_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
-
-		// Set input focus to new window, set borders and stacking order if option is enabled.
-		if constexpr(fluke::config::MOUSE_FOCUS)
-			fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
 
@@ -46,10 +42,6 @@ namespace fluke {
 			"event '", tinge::fg::make_yellow("LEAVE_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
-
-		// Optionally set input focus to root if certain options are enabled.
-		if constexpr(not config::USE_LAZY_FOCUS and fluke::config::MOUSE_FOCUS)
-			fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, conn.root());
 	}
 
 
@@ -81,16 +73,14 @@ namespace fluke {
 		)
 
 		// Move cursor to center of window.
-		if constexpr(fluke::config::LOCK_CURSOR_TO_WINDOW) {
-			FLUKE_DEBUG_NOTICE_SUB("centering pointer inside window.")
+		FLUKE_DEBUG_NOTICE_SUB("centering pointer inside window.")
 
-			const auto [x_, y_, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win)));
+		const auto [x_, y_, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win)));
 
-			const auto x = w / 2;
-			const auto y = h / 2;
+		const auto x = w / 2;
+		const auto y = h / 2;
 
-			fluke::warp_pointer(conn, XCB_NONE, win, 0, 0, 0, 0, x, y);
-		}
+		fluke::warp_pointer(conn, XCB_NONE, win, 0, 0, 0, 0, x, y);
 
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
 	}
@@ -189,6 +179,12 @@ namespace fluke {
 			return;
 
 		const xcb_window_t new_win = windows.back();
+
+		for (xcb_window_t win_: windows)
+			std::cout << win_ << '\n';
+
+		FLUKE_DEBUG_ERROR( new_win )
+
 		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}

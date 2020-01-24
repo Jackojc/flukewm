@@ -49,6 +49,12 @@ namespace fluke::config {
 		fluke::Key{ keys::super | keys::control, keys::up,    ACTION(fluke::action_snap, SNAP_SIDE_TOP) },
 		fluke::Key{ keys::super | keys::control, keys::down,  ACTION(fluke::action_snap, SNAP_SIDE_BOTTOM) },
 
+		// Snap to corners.
+		fluke::Key{ keys::super | keys::control | keys::shift, keys::left,  ACTION(fluke::action_snap, SNAP_CORNER_TOPLEFT) },
+		fluke::Key{ keys::super | keys::control | keys::shift, keys::right, ACTION(fluke::action_snap, SNAP_CORNER_TOPRIGHT) },
+		fluke::Key{ keys::super | keys::control | keys::shift, keys::up,    ACTION(fluke::action_snap, SNAP_CORNER_BOTTOMRIGHT) },
+		fluke::Key{ keys::super | keys::control | keys::shift, keys::down,  ACTION(fluke::action_snap, SNAP_CORNER_BOTTOMLEFT) },
+
 		// Tiling & Misc.
 		fluke::Key{ keys::super, keys::t, ACTION(fluke::action_layout_masterslave, MASTER_LEFT) },
 		fluke::Key{ keys::super, keys::c, ACTION(fluke::action_center) },

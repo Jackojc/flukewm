@@ -114,7 +114,9 @@ namespace fluke {
 		// We also want to find the index for the geometry of the focused
 		// specifically too.
 		FLUKE_DEBUG_NOTICE_SUB("get geometry of all mapped windows.");
+
 		decltype(windows)::size_type i = 0;
+
 		const auto geoms = fluke::dispatch_consume(conn, [&] (xcb_window_t win) {
 			if (win != focused)
 				i++;
@@ -161,13 +163,13 @@ namespace fluke {
 
 			// Find which side is closest to focused window.
 			const std::array sides{
-				fluke::distance(fpoint, left_side(x, y, w, h)),
 				fluke::distance(fpoint, right_side(x, y, w, h)),
-				fluke::distance(fpoint, top_side(x, y, w, h)),
+				fluke::distance(fpoint, left_side(x, y, w, h)),
 				fluke::distance(fpoint, bottom_side(x, y, w, h)),
+				fluke::distance(fpoint, top_side(x, y, w, h)),
 			};
 
-			distances.emplace_back(win, *std::min_element(sides.begin(), sides.end()));
+			distances.emplace_back(win, sides.at(static_cast<decltype(fsides)::size_type>(dir)));
 		}
 
 		// Find window with nearest distance.

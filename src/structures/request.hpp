@@ -9,16 +9,22 @@
 
 
 namespace fluke {
+	/*
+		This structure is a wrapper around xcb cookie types which are used
+		as a kind of "future" to retrieve a reply when needed.
+	*/
 	template <typename C>
 	struct Cookie {
 		using cookie_t = C;
 
 		cookie_t cookie;
 
+		// Constructors.
 		constexpr Cookie() {}
 		constexpr Cookie(cookie_t cookie_): cookie{cookie_} {}
 		constexpr Cookie(const Cookie& other): cookie{other.cookie} {}
 
+		// Assignment operator.
 		constexpr decltype(auto) operator=(const Cookie& other) noexcept {
 			if (this != &other)
 				cookie = other.cookie;
@@ -26,6 +32,7 @@ namespace fluke {
 			return *this;
 		}
 
+		// Implicit cast operator.
 		operator cookie_t() const noexcept {
 			return cookie;
 		}
@@ -35,8 +42,16 @@ namespace fluke {
 
 
 
-	// Define a get request, nothing special.
-	#define GET_REQUEST(name, type) \
+	/*
+		This macro is used to define a cookie structure, unique_ptr alias
+		and overloaded get function.
+
+		GET_REQUEST(InternAtom, intern_atom) defines the following:
+			struct InternAtomCookie { ... };
+			using InternAtomReply = ... ;
+			inline auto get( ... ) { ... }
+	*/
+	#define NEW_REQUEST(name, type) \
 		struct name##Cookie: Cookie<xcb_##type##_cookie_t> { \
 			template <typename... Ts> constexpr name##Cookie(cookie_t cookie_): \
 				Cookie::Cookie{cookie_} {} \
@@ -47,57 +62,40 @@ namespace fluke {
 		}
 
 
-	// Define a set request, uses the same cookie and reply function for all setters.
-	#define SET_REQUEST(name, type) \
-		struct name##Cookie: Cookie<xcb_void_cookie_t> { \
-			template <typename... Ts> constexpr name##Cookie(cookie_t cookie_): \
-				Cookie::Cookie{cookie_} {} \
-		};
+	NEW_REQUEST(InternAtom,                     intern_atom)
+	NEW_REQUEST(GetWindowAttributes,            get_window_attributes)
+	NEW_REQUEST(GetGeometry,                    get_geometry)
+	NEW_REQUEST(GetProperty,                    get_property)
+	NEW_REQUEST(GetInputFocus,                  get_input_focus)
+	NEW_REQUEST(QueryTree,                      query_tree)
+	NEW_REQUEST(QueryPointer,                   query_pointer)
+	NEW_REQUEST(QueryExtension,                 query_extension)
+	NEW_REQUEST(RandrGetProviders,              randr_get_providers)
+	NEW_REQUEST(RandrGetProviderInfo,           randr_get_provider_info)
+	NEW_REQUEST(RandrGetOutputInfo,             randr_get_output_info)
+	NEW_REQUEST(RandrGetCrtcInfo,               randr_get_crtc_info)
+	NEW_REQUEST(RandrGetOutputPrimary,          randr_get_output_primary)
+	NEW_REQUEST(RandrGetScreenResourcesCurrent, randr_get_screen_resources_current)
 
 
-
-	// Getters
-	GET_REQUEST(InternAtom,                     intern_atom)
-	GET_REQUEST(GetWindowAttributes,            get_window_attributes)
-	GET_REQUEST(GetGeometry,                    get_geometry)
-	GET_REQUEST(GetProperty,                    get_property)
-	GET_REQUEST(GetInputFocus,                  get_input_focus)
-	GET_REQUEST(QueryTree,                      query_tree)
-	GET_REQUEST(QueryPointer,                   query_pointer)
-	GET_REQUEST(QueryExtension,                 query_extension)
-	GET_REQUEST(RandrGetProviders,              randr_get_providers)
-	GET_REQUEST(RandrGetProviderInfo,           randr_get_provider_info)
-	GET_REQUEST(RandrGetOutputInfo,             randr_get_output_info)
-	GET_REQUEST(RandrGetCrtcInfo,               randr_get_crtc_info)
-	GET_REQUEST(RandrGetOutputPrimary,          randr_get_output_primary)
-	GET_REQUEST(RandrGetScreenResourcesCurrent, randr_get_screen_resources_current)
-
-
-	// Setters
-	SET_REQUEST(ConfigureWindow,        configure_window)
-	SET_REQUEST(ChangeWindowAttributes, change_window_attributes)
-	SET_REQUEST(SetInputFocus,          set_input_focus)
-	SET_REQUEST(MapWindow,              map_window)
-	SET_REQUEST(UnmapWindow,            unmap_window)
-	SET_REQUEST(WarpPointer,            warp_pointer)
-	SET_REQUEST(GrabKey,                grab_key)
-	SET_REQUEST(UngrabKey,              ungrab_key)
-	SET_REQUEST(SendEvent,              send_event)
-	SET_REQUEST(RandrSelectInput,       randr_select_input)
-
-
-
-	#undef GET_REQUEST
-	#undef SET_REQUEST
+	#undef NEW_REQUEST
 
 
 
 
+	/*
+		This function is simply used to make the dispatch-consume pattern
+		more convenient for a number of get requests.
 
-	// call get on multiple args
+		example:
+			auto [geom, attr] = fluke::get(conn,
+				fluke::get_geometry(conn, win),
+				fluke::get_window_attributes(conn, win)
+			);
+	*/
 	template <typename T1, typename T2, typename... Ts>
 	inline auto get(fluke::Connection& conn, T1&& arg1, T2&& arg2, Ts&&... args) {
-		// this is kind of messy but required to not conflict with the overloaded variants defined above
+		// This is kind of messy but required to not conflict with the overloaded variants defined above.
 		return std::tuple{
 			fluke::get(conn, std::forward<T1>(arg1)),
 			fluke::get(conn, std::forward<T2>(arg2)),
@@ -197,20 +195,20 @@ namespace fluke {
 
 	// Setter functions
 	template <typename T, typename... Ts>
-	inline ConfigureWindowCookie configure_window(
+	inline void configure_window(
 		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args
 	) {
-		uint32_t values[] = {
+		const uint32_t values[] = {
 			static_cast<uint32_t>(std::forward<T>(arg)),
 			static_cast<uint32_t>(std::forward<Ts>(args))...
 		};
-		return xcb_configure_window(conn, win, value_mask, values);
+		xcb_configure_window(conn, win, value_mask, values);
 	}
 
-	inline ConfigureWindowCookie configure_window(
+	inline void configure_window(
 		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args
 	) {
-		return xcb_configure_window(conn, win, value_mask, args);
+		xcb_configure_window(conn, win, value_mask, args);
 	}
 
 
@@ -218,20 +216,20 @@ namespace fluke {
 
 
 	template <typename T, typename... Ts>
-	inline ChangeWindowAttributesCookie change_window_attributes(
+	inline void change_window_attributes(
 		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args
 	) {
-		uint32_t values[] = {
+		const uint32_t values[] = {
 			static_cast<uint32_t>(std::forward<T>(arg)),
 			static_cast<uint32_t>(std::forward<Ts>(args))...
 		};
-		return xcb_change_window_attributes(conn, win, value_mask, values);
+		xcb_change_window_attributes(conn, win, value_mask, values);
 	}
 
-	inline ChangeWindowAttributesCookie change_window_attributes(
+	inline void change_window_attributes(
 		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args
 	) {
-		return xcb_change_window_attributes(conn, win, value_mask, args);
+		xcb_change_window_attributes(conn, win, value_mask, args);
 	}
 
 
@@ -239,35 +237,35 @@ namespace fluke {
 
 
 
-	inline SetInputFocusCookie set_input_focus(fluke::Connection& conn, uint8_t revert_to, xcb_window_t focus) {
-		return xcb_set_input_focus(conn, revert_to, focus, XCB_CURRENT_TIME);
+	inline void set_input_focus(fluke::Connection& conn, uint8_t revert_to, xcb_window_t focus) {
+		xcb_set_input_focus(conn, revert_to, focus, XCB_CURRENT_TIME);
 	}
 
 
-	inline MapWindowCookie map_window(fluke::Connection& conn, xcb_window_t win) {
-		return xcb_map_window(conn, win);
+	inline void map_window(fluke::Connection& conn, xcb_window_t win) {
+		xcb_map_window(conn, win);
 	}
 
 
-	inline UnmapWindowCookie unmap_window(fluke::Connection& conn, xcb_window_t win) {
-		return xcb_unmap_window(conn, win);
+	inline void unmap_window(fluke::Connection& conn, xcb_window_t win) {
+		xcb_unmap_window(conn, win);
 	}
 
 
 
-	inline WarpPointerCookie warp_pointer(
+	inline void warp_pointer(
 		fluke::Connection& conn,
 		xcb_window_t src, xcb_window_t dest,
 		int16_t src_x, int16_t src_y,
 		uint16_t src_width, uint16_t src_height,
 		int16_t dest_x, int16_t dest_y
 	) {
-		return xcb_warp_pointer(conn, src, dest, src_x, src_y, src_width, src_height, dest_x, dest_y);
+		xcb_warp_pointer(conn, src, dest, src_x, src_y, src_width, src_height, dest_x, dest_y);
 	}
 
 
 
-	inline GrabKeyCookie grab_key(
+	inline void grab_key(
 		fluke::Connection& conn,
 		bool owner_events,
 		xcb_window_t grab_window,
@@ -276,23 +274,23 @@ namespace fluke {
 		uint8_t pointer_mode,
 		uint8_t keyboard_mode
 	) {
-		return xcb_grab_key(conn, owner_events, grab_window, modifiers, key, pointer_mode, keyboard_mode);
+		xcb_grab_key(conn, owner_events, grab_window, modifiers, key, pointer_mode, keyboard_mode);
 	}
 
 
-	inline UngrabKeyCookie ungrab_key(fluke::Connection& conn, xcb_keycode_t key, xcb_window_t grab_window, uint16_t modifiers) {
-		return xcb_ungrab_key(conn, key, grab_window, modifiers);
+	inline void ungrab_key(fluke::Connection& conn, xcb_keycode_t key, xcb_window_t grab_window, uint16_t modifiers) {
+		xcb_ungrab_key(conn, key, grab_window, modifiers);
 	}
 
 
 	template <typename T>
-	inline SendEventCookie send_event(fluke::Connection& conn, bool propagate, xcb_window_t win, uint32_t event_mask, T event) {
-		return xcb_send_event(conn, propagate, win, event_mask, reinterpret_cast<const char*>(event));
+	inline void send_event(fluke::Connection& conn, bool propagate, xcb_window_t win, uint32_t event_mask, T event) {
+		xcb_send_event(conn, propagate, win, event_mask, reinterpret_cast<const char*>(event));
 	}
 
 
-	inline RandrSelectInputCookie randr_select_input(fluke::Connection& conn, xcb_window_t win, uint16_t mask) {
-		return xcb_randr_select_input(conn, win, mask);
+	inline void randr_select_input(fluke::Connection& conn, xcb_window_t win, uint16_t mask) {
+		xcb_randr_select_input(conn, win, mask);
 	}
 
 
