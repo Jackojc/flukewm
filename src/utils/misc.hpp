@@ -74,16 +74,14 @@ namespace fluke {
 
 		// Ask X for a list of windows, returns a pointer to
 		// an `xcb_query_tree_reply_t` structure.
-		auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
+		const auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
 		// Each element is copied into the vector.
-		std::vector<xcb_window_t> windows{
+		return std::vector<xcb_window_t>{
 			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
 			xcb_query_tree_children(tree.get()) + xcb_query_tree_children_length(tree.get())
 		};
-
-		return windows;
 	}
 
 
@@ -105,7 +103,7 @@ namespace fluke {
 		auto windows = fluke::get_tree(conn);
 
 		// Get window attributes for every ID in `windows`.
-		auto attrs = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+		const auto attrs = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
 			return fluke::get_window_attributes( conn, win );
 		}, windows);
 
@@ -115,7 +113,7 @@ namespace fluke {
 
 		// Remove windows which have override_redirect set, they have asked to
 		// not be managed by the window manager.
-		const auto should_remove = [&attrs, &i] (xcb_window_t) {
+		const auto should_remove = [&] (xcb_window_t) {
 			return fluke::is_ignored(attrs[i++]);
 		};
 
@@ -143,7 +141,7 @@ namespace fluke {
 		auto windows = fluke::get_tree(conn);
 
 		// Get window attributes for every ID in `windows`.
-		auto attrs = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+		const auto attrs = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
 			return fluke::get_window_attributes( conn, win );
 		}, windows);
 
@@ -153,7 +151,7 @@ namespace fluke {
 
 		// Remove windows which have override_redirect set and are unmapped,
 		// they have asked to not be managed by the window manager.
-		const auto should_remove = [&attrs, &i] (xcb_window_t) {
+		const auto should_remove = [&] (xcb_window_t) {
 			const auto& attr = attrs[i++];
 			return fluke::is_ignored(attr) or not fluke::is_mapped(attr);
 		};
@@ -174,17 +172,15 @@ namespace fluke {
 	inline auto get_providers(fluke::Connection& conn) {
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_providers"), "'")
 
-		auto provider_info = fluke::get(conn, fluke::randr_get_providers(conn, conn.root()));
+		const auto provider_info = fluke::get(conn, fluke::randr_get_providers(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
 		// Each element is copied into the vector.
-		std::vector<xcb_randr_provider_t> providers{
+		return std::vector<xcb_randr_provider_t>{
 			xcb_randr_get_providers_providers(provider_info.get()),  // pointer to array of windows.
 			xcb_randr_get_providers_providers(provider_info.get()) +
 				xcb_randr_get_providers_providers_length(provider_info.get())
 		};
-
-		return providers;
 	}
 
 
@@ -198,17 +194,15 @@ namespace fluke {
 	inline auto get_provider_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_provider_info"), "'")
 
-		auto output_info = fluke::get(conn, fluke::randr_get_provider_info(conn, provider));
+		const auto output_info = fluke::get(conn, fluke::randr_get_provider_info(conn, provider));
 
 		// Create a vector using start pointer and end pointer.
 		// Each element is copied into the vector.
-		std::vector<xcb_randr_output_t> outputs{
+		return std::vector<xcb_randr_output_t>{
 			xcb_randr_get_provider_info_outputs(output_info.get()),  // pointer to array of outputs.
 			xcb_randr_get_provider_info_outputs(output_info.get()) +
 				xcb_randr_get_provider_info_outputs_length(output_info.get())
 		};
-
-		return outputs;
 	}
 
 
@@ -231,17 +225,15 @@ namespace fluke {
 	inline auto get_screen_resources(fluke::Connection& conn) {
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_screen_resources"), "'")
 
-		auto screen_resources = fluke::get(conn, fluke::randr_get_screen_resources_current(conn, conn.root()));
+		const auto screen_resources = fluke::get(conn, fluke::randr_get_screen_resources_current(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
 		// Each element is copied into the vector.
-		std::vector<xcb_randr_output_t> outputs{
+		return std::vector<xcb_randr_output_t>{
 			xcb_randr_get_screen_resources_current_outputs(screen_resources.get()),  // pointer to array of outputs.
 			xcb_randr_get_screen_resources_current_outputs(screen_resources.get()) +
 				xcb_randr_get_screen_resources_current_outputs_length(screen_resources.get())
 		};
-
-		return outputs;
 	}
 
 
@@ -259,11 +251,11 @@ namespace fluke {
 	inline auto get_crtcs(fluke::Connection& conn) {
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_crtcs"), "'")
 
-		auto outputs = fluke::get_screen_resources(conn);
+		const auto outputs = fluke::get_screen_resources(conn);
 
 		// Get output info for each display.
 		auto output_info = fluke::dispatch_consume(conn, [&conn] (xcb_randr_output_t out) {
-			return fluke::randr_get_output_info( conn, out );
+			return fluke::randr_get_output_info(conn, out);
 		}, outputs);
 
 
@@ -274,11 +266,21 @@ namespace fluke {
 
 
 		// Get CRTC structures.
-		auto crtcs = fluke::dispatch_consume(conn, [&conn] (const auto& info) {
-			return fluke::randr_get_crtc_info( conn, info->crtc );
+		return fluke::dispatch_consume(conn, [&conn] (const auto& info) {
+			return fluke::randr_get_crtc_info(conn, info->crtc);
 		}, output_info);
+	}
 
-		return crtcs;
+
+
+	/*
+		Distance algorith, return the distance between 2 cartesian points on a 2d plane.
+
+		example:
+			auto dist = fluke::distance({0, 0}, {5, 5});
+	*/
+	inline auto distance(const fluke::Point a, const fluke::Point& b) {
+		return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
 	}
 
 
@@ -298,24 +300,22 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_nearest_display_rect"), "'")
 
 		// Destructure rect argument.
-		auto [x_, y_, w_, h_] = r;
+		const auto [x_, y_, w_, h_] = r;
 
 		// Get center of rect argument.
-		fluke::Point center{ x_ + w_ / 2, y_ + h_ / 2 };
+		const fluke::Point center{ x_ + w_ / 2, y_ + h_ / 2 };
 
 		// Store distances to rects and the associated rect itself.
 		std::vector<std::pair<fluke::Rect, int>> distances;
 
-		// Distance algorithm.
-		// Compare center of display to center of rect argument.
-		const auto distance = [&center] (const fluke::Point& p) {
-			return std::sqrt(std::pow(center.x - p.x, 2) + std::pow(center.y - p.y, 2));
-		};
-
 		// Loop over all displays and get its distance to `center`.
-		for (auto& disp: fluke::get_crtcs(conn)) {
-			auto [x, y, w, h] = fluke::as_rect(disp);
-			distances.emplace_back(fluke::Rect{x, y, w, h}, distance(fluke::Point{ x + w / 2, y + h / 2 }));
+		for (const auto& disp: fluke::get_crtcs(conn)) {
+			const auto [x, y, w, h] = fluke::as_rect(disp);
+
+			distances.emplace_back(
+				fluke::Rect{x, y, w, h},
+				fluke::distance(center, fluke::Point{ x + w / 2, y + h / 2 })
+			);
 		}
 
 		// Find rect which is nearest and return it.
@@ -336,7 +336,7 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_keycodes"), "'")
 
 		// Get a pointer to an array of keycodes.
-		auto keycode_ptr = std::unique_ptr<xcb_keycode_t[], decltype(&std::free)>{
+		const auto keycode_ptr = std::unique_ptr<xcb_keycode_t[], decltype(&std::free)>{
 			xcb_key_symbols_get_keycode(conn.keysyms(), sym), &std::free
 		};
 
@@ -347,12 +347,10 @@ namespace fluke {
 			count++;
 
 		// Use pointer + length to create a vector.
-		std::vector<xcb_keycode_t> keycodes{
+		return std::vector<xcb_keycode_t>{
 			keycode_ptr.get(),
 			keycode_ptr.get() + count
 		};
-
-		return keycodes;
 	}
 
 
@@ -398,10 +396,10 @@ namespace fluke {
 		std::vector<uint32_t> modifiers_combinations;
 
 		// This is a bit untidy but it produces every combination of modifiers.
-		for (auto a: modifiers) {
-			for (auto b: modifiers) {
-				for (auto c: modifiers) {
-					modifiers_combinations.emplace_back( a | b | c);
+		for (const auto a: modifiers) {
+			for (const auto b: modifiers) {
+				for (const auto c: modifiers) {
+					modifiers_combinations.emplace_back( a | b | c );
 				}
 			}
 		}
@@ -411,13 +409,13 @@ namespace fluke {
 
 		// Register our keybindings.
 		FLUKE_DEBUG_NOTICE_SUB("grab keys.")
-		for (auto& [key_mod, key_keysym, key_func]: keys) {
-			for (auto& keycode: fluke::get_keycodes(conn, key_keysym)) {
+		for (const auto& [key_mod, key_keysym, key_func]: keys) {
+			for (const auto& keycode: fluke::get_keycodes(conn, key_keysym)) {
 				// Register the keybind under every modifier in the above structure.
 				// This is so that our keybinding can work while various "locks" are
 				// active like caps lock.
 				// This will make X send us events for the registered bindings.
-				for (auto& mod: modifiers_combinations)
+				for (const auto& mod: modifiers_combinations)
 					fluke::grab_key(
 						conn, true, conn.root(), key_mod | mod, keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC
 					);

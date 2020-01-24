@@ -1,9 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <optional>
-#include <tuple>
-#include <cmath>
 #include <fluke.hpp>
 
 namespace fluke {
@@ -12,10 +9,10 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE(
 			"action '", tinge::fg::make_yellow("RESIZE/MOVE"),
 			"' with arg(s) '",
-			tinge::fg::make_yellow("x: ", x_amount),
-			tinge::fg::make_yellow(", y: ", y_amount),
-			tinge::fg::make_yellow(", w: ", w_amount),
-			tinge::fg::make_yellow(", h: ", h_amount),
+				tinge::fg::make_yellow("x: ", x_amount),
+				tinge::fg::make_yellow(", y: ", y_amount),
+				tinge::fg::make_yellow(", w: ", w_amount),
+				tinge::fg::make_yellow(", h: ", h_amount),
 			"'"
 		)
 
@@ -23,19 +20,23 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE_SUB("get focused window.");
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 
-
 		// Get geometry of focused window and calculate offsets for the new window rect.
 		FLUKE_DEBUG_NOTICE_SUB("calculate offsets.");
-		const auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
+		auto [x, y, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
 
-		const auto new_x = static_cast<uint32_t>(x + x_amount);
-		const auto new_y = static_cast<uint32_t>(y + y_amount);
-		const auto new_w = static_cast<uint32_t>(w + w_amount);
-		const auto new_h = static_cast<uint32_t>(h + h_amount);
+		x += x_amount;
+		y += y_amount;
+		w += w_amount;
+		h += h_amount;
 
 		FLUKE_DEBUG_NOTICE_SUB("set new rect for window.");
-		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, new_x, new_y, new_w, new_h);
+		fluke::configure_window(conn, focused, fluke::XCB_MOVE_RESIZE, x, y, w, h);
 	}
+
+
+
+
+
 
 
 	// Change workspace
@@ -78,7 +79,6 @@ namespace fluke {
 
 
 
-	// Alt tab like focusing
 	enum {
 		FOCUS_LEFT,
 		FOCUS_RIGHT,
@@ -148,11 +148,6 @@ namespace fluke {
 		// Store distances to windows and the associated window IDs.
 		std::vector<std::pair<xcb_window_t, int>> distances;
 
-		// Get the distance from center point of focused window to another point.
-		const auto distance = [&fpoint] (const fluke::Point& p) {
-			return std::sqrt(std::pow(fpoint.x - p.x, 2) + std::pow(fpoint.y - p.y, 2));
-		};
-
 
 		// Loop over all windows and get the midpoint of all of their four sides.
 		// We get the point which is nearest to the focused window and
@@ -166,10 +161,10 @@ namespace fluke {
 
 			// Find which side is closest to focused window.
 			const std::array sides{
-				distance(left_side(x, y, w, h)),
-				distance(right_side(x, y, w, h)),
-				distance(top_side(x, y, w, h)),
-				distance(bottom_side(x, y, w, h)),
+				fluke::distance(fpoint, left_side(x, y, w, h)),
+				fluke::distance(fpoint, right_side(x, y, w, h)),
+				fluke::distance(fpoint, top_side(x, y, w, h)),
+				fluke::distance(fpoint, bottom_side(x, y, w, h)),
 			};
 
 			distances.emplace_back(win, *std::min_element(sides.begin(), sides.end()));
@@ -423,6 +418,7 @@ namespace fluke {
 
 		if (windows.size() <= 1)
 			return;
+
 
 
 		// Get focused window ID.

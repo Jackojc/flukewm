@@ -6,8 +6,8 @@
 #include <fluke.hpp>
 
 
-std::jmp_buf exit_jump;  // This is used to jump back to main after a signal is handled.
-int status;              // Exit status for signal handler.
+std::jmp_buf exit_jump;     // This is used to jump back to main after a signal is handled.
+int status = EXIT_SUCCESS;  // Exit status for signal handler.
 
 
 // Keyboard interrupt.
@@ -126,55 +126,81 @@ int main() {
 		// Handle all events.
 		switch (ev_type) {
 			case 0:
-				fluke::event_error(conn, fluke::event_cast<fluke::Error>(std::move(event)));
+				fluke::event_error(conn,
+					fluke::event_cast<fluke::Error>(std::move(event))
+				);
 				continue;
 
 			case XCB_ENTER_NOTIFY:
-				fluke::event_enter_notify(conn, fluke::event_cast<fluke::EnterNotifyEvent>(std::move(event)));
+				fluke::event_enter_notify(conn,
+					fluke::event_cast<fluke::EnterNotifyEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_LEAVE_NOTIFY:
-				fluke::event_leave_notify(conn, fluke::event_cast<fluke::LeaveNotifyEvent>(std::move(event)));
+				fluke::event_leave_notify(conn,
+					fluke::event_cast<fluke::LeaveNotifyEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_FOCUS_IN:
-				fluke::event_focus_in(conn, fluke::event_cast<fluke::FocusInEvent>(std::move(event)));
+				fluke::event_focus_in(conn,
+					fluke::event_cast<fluke::FocusInEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_FOCUS_OUT:
-				fluke::event_focus_out(conn, fluke::event_cast<fluke::FocusOutEvent>(std::move(event)));
+				fluke::event_focus_out(conn,
+					fluke::event_cast<fluke::FocusOutEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_CREATE_NOTIFY:
-				fluke::event_create_notify(conn, fluke::event_cast<fluke::CreateNotifyEvent>(std::move(event)));
+				fluke::event_create_notify(conn,
+					fluke::event_cast<fluke::CreateNotifyEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_DESTROY_NOTIFY:
-				fluke::event_destroy_notify(conn, fluke::event_cast<fluke::DestroyNotifyEvent>(std::move(event)));
+				fluke::event_destroy_notify(conn,
+					fluke::event_cast<fluke::DestroyNotifyEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_MAP_REQUEST:
-				fluke::event_map_request(conn, fluke::event_cast<fluke::MapRequestEvent>(std::move(event)));
+				fluke::event_map_request(conn,
+					fluke::event_cast<fluke::MapRequestEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_UNMAP_NOTIFY:
-				fluke::event_unmap_notify(conn, fluke::event_cast<fluke::UnmapNotifyEvent>(std::move(event)));
+				fluke::event_unmap_notify(conn,
+					fluke::event_cast<fluke::UnmapNotifyEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_CONFIGURE_REQUEST:
-				fluke::event_configure_request(conn, fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(event)));
+				fluke::event_configure_request(conn,
+					fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_KEY_PRESS:
-				fluke::event_keypress(conn, fluke::event_cast<fluke::KeyPressEvent>(std::move(event)));
+				fluke::event_keypress(conn,
+					fluke::event_cast<fluke::KeyPressEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_PROPERTY_NOTIFY:
-				fluke::event_property_notify(conn, fluke::event_cast<fluke::PropertyNotifyEvent>(std::move(event)));
+				fluke::event_property_notify(conn,
+					fluke::event_cast<fluke::PropertyNotifyEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_CLIENT_MESSAGE:
-				fluke::event_client_message(conn, fluke::event_cast<fluke::ClientMessageEvent>(std::move(event)));
+				fluke::event_client_message(conn,
+					fluke::event_cast<fluke::ClientMessageEvent>(std::move(event))
+				);
 				continue;
 		}
 
@@ -183,11 +209,15 @@ int main() {
 		// do not need to check for unhandled randr events.
 		switch (randr_ev_type) {
 			case XCB_RANDR_SCREEN_CHANGE_NOTIFY:
-				fluke::event_randr_screen_change_notify(conn, fluke::event_cast<fluke::RandrScreenChangeNotifyEvent>(std::move(event)));
+				fluke::event_randr_screen_change_notify(conn,
+					fluke::event_cast<fluke::RandrScreenChangeNotifyEvent>(std::move(event))
+				);
 				continue;
 
 			case XCB_RANDR_NOTIFY:
-				fluke::event_randr_notify(conn, fluke::event_cast<fluke::RandrNotifyEvent>(std::move(event)));
+				fluke::event_randr_notify(conn,
+					fluke::event_cast<fluke::RandrNotifyEvent>(std::move(event))
+				);
 				continue;
 		}
 
@@ -201,5 +231,5 @@ int main() {
 	FLUKE_DEBUG_SUCCESS("exiting.")
 	fluke::on_exit(conn);
 
-	return EXIT_SUCCESS;
+	return status;
 }
