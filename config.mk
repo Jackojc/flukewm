@@ -2,19 +2,19 @@ SRC=main.cpp
 STD=c++17
 
 BUILD_DIR=build
-TARGET=flukewm
+TARGET=fluke
 
 
 # Include & Link
 INCS=-I. -Isrc/ -Imodules/tinge/
-LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lpthread $(LDLIBS)
+LIBS=-lxcb -lxcb-util -lxcb-randr -lxcb-icccm -lxcb-keysyms $(LDLIBS)
 
 
 # Options
 PROGRAM_CPPFLAGS=$(CPPFLAGS)
 PROGRAM_LDFLAGS=$(LIBS) $(LDFLAGS)
 
-PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow -Wundef -Wno-unused $(CXXWARN)
+PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow -Wundef -Wno-unused -Wno-unused-parameter -Wno-missing-braces $(CXXWARN)
 
 
 # Make Flags
@@ -25,11 +25,11 @@ symbols ?= yes
 # Debugging
 ifeq ($(debug),no)
 	symbols ?= no
-	PROGRAM_CXXFLAGS=-O3 -march=native -flto $(CXXFLAGS)
+	PROGRAM_CXXFLAGS=-flto -O3 -march=native -DNDEBUG $(CXXFLAGS)
 
 else ifeq ($(debug),yes)
 	symbols ?= yes
-	PROGRAM_CXXFLAGS=-Og -march=native
+	PROGRAM_CXXFLAGS=-Og -march=native -fsanitize=address,undefined,leak
 
 else
 $(error debug should be either yes or no)
@@ -38,9 +38,12 @@ endif
 
 # Debugging Symbols
 ifeq ($(symbols),yes)
-	PROGRAM_CXXFLAGS += -g
+	PROGRAM_CXXFLAGS+=-g
 
-else ifneq ($(symbols),no)
+else ifeq ($(symbols),no)
+	PROGRAM_CXXFLAGS+=-s
+
+else
 $(error symbols should be either yes or no)
 endif
 

@@ -1,47 +1,31 @@
 #pragma once
 
-#include <string_view>
-#include <array>
-#include <sstream>
-
 extern "C" {
 #include <unistd.h>
 }
 
-
 namespace fluke {
+	/*
+		Launches a program specified by first argument,
+		remaining arguments are passed to the new processes
+		argv[].
+
+		example:
+			if (exec("script", "a", "b"))
+				std::cout << "Success!\n";
+			else
+				std::cout << "Error!\n";
+	*/
 	template <typename... Ts>
-	void forkexec(std::string_view path, Ts&&... args) {
-		if (fork() == 0) {
-			setsid();
+	bool exec(const char* arg, Ts&&... args) {
+		FLUKE_DEBUG_NOTICE("run '", tinge::fg::make_yellow(arg), "'")
 
-			// turn argument into a string using operator<< overload.
-			std::stringstream ss;
-	        auto empty = std::string{};
+		if (fork() != 0)
+			return false;
 
-			const auto convert = [&] (const auto& x) {
-				ss.str(empty);
-				ss << x;
-				return ss.str();
-			};
+		if (setsid() == -1)
+			return false;
 
-
-			// argv
-			std::array converted = { convert(std::forward<Ts>(args))... };
-			std::array<char*, sizeof...(Ts) + 2> argv{};
-
-			for (int i = 1; i < sizeof...(Ts) + 1; ++i)
-	            argv.at(i) = converted.at(i - 1).data();
-
-
-			argv.front() = const_cast<char*>(path.data());
-			argv.back() = static_cast<char*>(nullptr);
-
-
-			// environment variables.
-			char* const envp[] = { static_cast<char*>(nullptr) };
-
-			execve(path.data(), argv.data(), envp);
-		}
+		return execlp(arg, arg, args..., (char*)nullptr) != -1;
 	}
 }

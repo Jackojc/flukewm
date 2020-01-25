@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iomanip>
+#include <sstream>
 #include <cstdint>
 
 extern "C" {
@@ -7,6 +9,7 @@ extern "C" {
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_atom.h>
 #include <xcb/xcb_icccm.h>
+#include <xcb/xcb_ewmh.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xproto.h>
@@ -35,7 +38,8 @@ namespace fluke {
 	constexpr uint32_t XCB_WINDOWMANAGER_EVENTS =
 		XCB_EVENT_MASK_STRUCTURE_NOTIFY |
 		XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
-		XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT
+		XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
+		XCB_EVENT_MASK_BUTTON_PRESS
 	;
 
 	constexpr uint32_t XCB_WINDOW_EVENTS =
@@ -44,34 +48,4 @@ namespace fluke {
 		XCB_EVENT_MASK_FOCUS_CHANGE |
 		XCB_EVENT_MASK_STRUCTURE_NOTIFY
 	;
-
-
-	// kind of a hack to allow passing rvalue addresses
-	// void func(uint32_t*);
-	// func(data{ a | b });
-	struct data {
-		uint32_t data;
-
-		operator uint32_t*() {
-			return &data;
-		}
-	};
-
-
-
-	// template <typename... Ts>
-	// struct values {
-	// 	std::array<uint32_t, sizeof...(Ts)> data;
-
-	// 	constexpr values(Ts&&... args):
-	// 		data{ std::forward<Ts>(args)... }
-	// 	{
-
-	// 	}
-
-	// 	operator uint32_t*() {
-	// 		return data.data();
-	// 	}
-	// };
-
 }
