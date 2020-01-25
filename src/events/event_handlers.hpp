@@ -5,13 +5,8 @@
 
 
 namespace fluke {
-	// Function signature for event handlers: void(*)(fluke::Connection&, const fluke::Event&);
-
-
 	/*
 		This event is triggered whenever the pointer enters a window.
-
-		We also optionally set the input focus to this window.
 	*/
 	inline void event_enter_notify(fluke::Connection& conn, const fluke::EnterNotifyEvent& e) {
 		const xcb_window_t win = e->event;
@@ -30,9 +25,6 @@ namespace fluke {
 
 	/*
 		This event is triggered whenever the pointer leaves a window.
-
-		We also optionally set the input focus to the root window if mouse focusing
-		is enabled and lazy focusing is disabled.
 	*/
 	inline void event_leave_notify(fluke::Connection& conn, const fluke::LeaveNotifyEvent& e) {
 		const xcb_window_t win = e->event;
@@ -75,13 +67,7 @@ namespace fluke {
 		// Move cursor to center of window.
 		FLUKE_DEBUG_NOTICE_SUB("centering pointer inside window.")
 
-		const auto [x_, y_, w, h] = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win)));
-
-		const auto x = w / 2;
-		const auto y = h / 2;
-
-		fluke::warp_pointer(conn, XCB_NONE, win, 0, 0, 0, 0, x, y);
-
+		fluke::center_pointer_in_rect(conn, fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win))));
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
 	}
 
@@ -131,11 +117,7 @@ namespace fluke {
 
 		// Find the currently focused display to launch the new window on.
 		FLUKE_DEBUG_NOTICE_SUB("getting focused window and display.")
-		const xcb_window_t focused = fluke::get_focused_window(conn);
-		const auto focused_rect = fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, focused)));
-
-		const auto [window_x, window_y, window_w, window_h] = focused_rect;
-		const auto [display_x, display_y, display_w, display_h] = fluke::get_nearest_display_rect(conn, focused_rect);
+		const auto [display_x, display_y, display_w, display_h] = fluke::get_hovered_display_rect(conn);
 
 
 		// Resize window to a percentage of the screen size.
@@ -180,13 +162,10 @@ namespace fluke {
 
 		const xcb_window_t new_win = windows.back();
 
-		for (xcb_window_t win_: windows)
-			std::cout << win_ << '\n';
+		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
+		fluke::configure_window(conn, new_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 
-		FLUKE_DEBUG_ERROR( new_win )
-
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
-		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, new_win);
 	}
 
 

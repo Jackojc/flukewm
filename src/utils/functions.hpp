@@ -504,9 +504,78 @@ namespace fluke {
 
 
 
+	/*
+		Gets the center point of a given rectangle.
+
+		example:
+			auto [x, y] = fluke::get_rect_center({0, 0, 10, 10});
+	*/
 	inline auto get_rect_center(const fluke::Rect& r) {
 		const auto [x, y, w, h] = r;
 		return fluke::Point{ x + w / 2, y + h / 2 };
+	}
+
+
+
+	/*
+		Centers the cursor in the center of the given rect.
+
+		example:
+			auto geom = fluke::get(conn, fluke::get_geometry(conn, win));
+			fluke::center_pointer_in_rect(conn, fluke::as_rect(geom));
+	*/
+	inline void center_pointer_in_rect(fluke::Connection& conn, const fluke::Rect& r) {
+		auto [x, y] = fluke::get_rect_center(r);
+		fluke::warp_pointer(conn, XCB_NONE, conn.root(), 0, 0, 0, 0, x, y);
+	}
+
+
+
+	/*
+		Checks if a given point resides within the boundaries of a given
+		rectangle.
+
+		example:
+			bool is_inside = fluke::aabb({0, 0, 10, 10}, {5, 5});
+	*/
+	inline bool aabb(const fluke::Rect& r, const fluke::Point& p) {
+		const auto [x, y, w, h] = r;
+		const auto [px, py] = p;
+
+		return
+			px > x and
+			py > y and
+			px < x + w and
+			py < y + h
+		;
+	}
+
+
+
+	/*
+		Get the rectangle of the monitor which contains the pointer.
+
+		example:
+			auto [x, y, w, h] = fluke::get_hovered_monitor(conn);
+	*/
+	inline fluke::Rect get_hovered_display_rect(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_hovered_display_rect"), "'")
+
+		FLUKE_DEBUG_NOTICE_SUB("get pointer coordinates.")
+		const auto cursor = fluke::as_point(fluke::get(conn, fluke::query_pointer(conn, conn.root())));
+		FLUKE_DEBUG_NOTICE_SUB(cursor)
+
+
+		FLUKE_DEBUG_NOTICE_SUB("find monitor.")
+
+		for (const auto& disp: fluke::get_crtcs(conn)) {
+			const auto display_rect = fluke::as_rect(disp);
+
+			if (fluke::aabb(display_rect, cursor))
+				return display_rect;
+		}
+
+		return fluke::Rect{0, 0, 0, 0};
 	}
 }
 

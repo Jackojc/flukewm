@@ -104,6 +104,9 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE_SUB("get focused window.");
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 
+		if (focused == conn.root())
+			return;
+
 		// Vector of all windows currently mapped.
 		const auto windows = fluke::get_mapped_windows(conn);
 
@@ -134,11 +137,9 @@ namespace fluke {
 
 		// Get geometry of currently focused window.
 		FLUKE_DEBUG_NOTICE_SUB("get reference point on focused window.");
-		// const auto [fx, fy, fw, fh] = fluke::as_rect(geoms.at(i));
-		const auto focused_rect = fluke::as_rect(geoms[i]);
-		const auto [fx, fy, fw, fh] = focused_rect;
 
-		// const auto focused_center = fluke::get_rect_center(focused_rect);
+		const auto focused_rect = fluke::as_rect(geoms.at(i));
+		const auto [fx, fy, fw, fh] = focused_rect;
 
 
 		// Get the midpoint of the relevant side of the currently focused window.
@@ -165,21 +166,7 @@ namespace fluke {
 			if (win == focused)
 				continue;
 
-			const auto [x, y, w, h] = fluke::as_rect(geom);
-
-			// Get point on the appropriate side of this window.
-			// Note that right/left & top/down are reversed compared to
-			// the array above `fsides`.
-			// This is because if we are focusing right, we want to check
-			// the left side of other windows etc.
-			const std::array sides{
-				right_side(x, y, w, h),
-				left_side(x, y, w, h),
-				bottom_side(x, y, w, h),
-				top_side(x, y, w, h),
-			};
-
-			const auto point = sides.at(static_cast<decltype(sides)::size_type>(dir));
+			const auto point = fluke::get_rect_center(fluke::as_rect(geom));
 
 
 			// Check if the window we are currently checking is present in the direction
@@ -205,14 +192,18 @@ namespace fluke {
 
 		// Find window with nearest distance.
 		FLUKE_DEBUG_NOTICE_SUB("get nearest window.");
-		const auto nearest_win = std::min_element(distances.begin(), distances.end(), [] (const auto& a, const auto& b) {
-			return a.second < b.second;
-		})->first;
+		const auto nearest_win = std::min_element(
+			distances.begin(), distances.end(),
+
+			[] (const auto& a, const auto& b) {
+				return a.second < b.second;
+			}
+		)->first;
 
 		// Set input focus to new window.
 		FLUKE_DEBUG_NOTICE_SUB("focus window.");
 		fluke::configure_window(conn, nearest_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
-		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_POINTER_ROOT, nearest_win);
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, nearest_win);
 	}
 
 
@@ -243,11 +234,14 @@ namespace fluke {
 		FLUKE_DEBUG_NOTICE_SUB("get focused window.");
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 
+		if (focused == conn.root())
+			return;
+
 		// Depending on which direction we are focusing, we need to use
 		// different options and windows.
 		FLUKE_DEBUG_NOTICE_SUB("generate table for options.");
 		const std::array opts {
-			std::pair{windows.back(), XCB_STACK_MODE_BELOW},  // Previous
+			std::pair{windows.at(windows.size() - 2), XCB_STACK_MODE_BELOW},  // Previous
 			std::pair{windows.front(), XCB_STACK_MODE_ABOVE}, // Next
 		};
 
@@ -256,7 +250,7 @@ namespace fluke {
 
 		// Set focus to new window and shuffle the window stack around.
 		fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_STACK_MODE, stack_mode);
-		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, stack_mode);
+		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, next_win);
 	}
 
@@ -552,6 +546,11 @@ namespace fluke {
 
 
 	inline void action_layout_monocle(fluke::Connection&) {
+
+	}
+
+
+	inline void action_layout_grid(fluke::Connection&) {
 
 	}
 }

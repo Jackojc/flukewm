@@ -5,7 +5,6 @@
 
 
 namespace fluke {
-
 	namespace detail {
 		void cleanup_connection(xcb_connection_t* conn) noexcept {
 			xcb_disconnect(conn);
@@ -15,6 +14,16 @@ namespace fluke {
 	class Connection {
 		// Data
 		private:
+			// The connection structure maintains an owning pointer to
+			// an `xcb_connection_t` structure through which all communication
+			// with the X server is done.
+
+			// We also hold onto a pointer to keysymbols which we use for registering
+			// keybindings and handling them on a keypress
+
+			// We keep a pointer to the main screen, we can use this to get
+			// the root window ID.
+
 			std::unique_ptr<xcb_connection_t, decltype(&detail::cleanup_connection)> conn;
 			std::unique_ptr<xcb_key_symbols_t, decltype(&xcb_key_symbols_free)> key_symbols;
 

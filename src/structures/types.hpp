@@ -4,11 +4,14 @@
 #include <fluke.hpp>
 
 namespace fluke {
+	// Aliases for some xcb types.
 	namespace detail {
 		using pos_type = decltype(xcb_get_geometry_reply_t::x);
 		using size_type = decltype(xcb_get_geometry_reply_t::width);
 	}
 
+
+	// Structure that represents a rectangle: x, y, w, h.
 	struct Rect {
 		detail::pos_type  x, y;
 		detail::size_type w, h;
@@ -25,6 +28,7 @@ namespace fluke {
 		}
 
 
+		// Comparison operators.
 		constexpr bool operator==(const Rect& rhs) const {
 			return
 				x == rhs.x and
@@ -39,6 +43,7 @@ namespace fluke {
 		}
 	};
 
+
 	std::ostream& operator<<(std::ostream& os, const Rect& r) {
 		auto [x, y, w, h] = r;
 		return (os << '(' << x << ',' << y << ',' << w << ',' << h << ')');
@@ -46,7 +51,7 @@ namespace fluke {
 
 
 
-
+	// Structure that represents a point: x, y.
 	struct Point {
 		detail::pos_type x, y;
 
@@ -60,6 +65,7 @@ namespace fluke {
 		}
 
 
+		// Comparison operators.
 		constexpr bool operator==(const Point& rhs) const {
 			return
 				x == rhs.x and
@@ -71,6 +77,7 @@ namespace fluke {
 			return not(*this == rhs);
 		}
 	};
+
 
 	std::ostream& operator<<(std::ostream& os, const Point& p) {
 		auto [x, y] = p;

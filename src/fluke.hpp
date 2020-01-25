@@ -36,15 +36,16 @@
 #include <structures/connection.hpp>
 #include <structures/request.hpp>
 
+#include <events/events.hpp>
+
 #include <utils/zip.hpp>
 #include <utils/exec.hpp>
-#include <utils/events.hpp>
 #include <utils/keys.hpp>
-#include <utils/misc.hpp>
+#include <utils/functions.hpp>
 
 #include <actions.hpp>
 
 #include <config/keybindings.hpp>
 #include <config/hooks.hpp>
 
-#include <event_handlers.hpp>
+#include <events/event_handlers.hpp>
