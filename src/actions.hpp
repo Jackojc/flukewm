@@ -187,7 +187,7 @@ namespace fluke {
 			// If the window is valid, calculate the distance between the reference
 			// point on the focused window to the point on the appropriate side of
 			// the window we are checking. Add it to the vector of distances.
-			distances.emplace_back(win, fluke::distance(fpoint, point));
+			distances.emplace_back(win, fluke::distance_abs(fpoint, point));
 		}
 
 		// Find window with nearest distance.

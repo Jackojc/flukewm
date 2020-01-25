@@ -274,13 +274,43 @@ namespace fluke {
 
 
 	/*
-		Distance algorith, return the distance between 2 cartesian points on a 2d plane.
+		Distance algorithm, return the distance between 2 cartesian points on a 2d plane.
+
+		This variant of the function does not return the actual distance, rather, it
+		is used for cases where you need to compare two distances and find which one is
+		shorter/longer.
+
+		example:
+			auto dist = fluke::distance_fast({0, 0}, {5, 5});
+	*/
+	inline auto distance_fast(const fluke::Point a, const fluke::Point& b) {
+		return std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2);
+	}
+
+
+
+	/*
+		Distance algorithm, return the distance between 2 cartesian points on a 2d plane.
 
 		example:
 			auto dist = fluke::distance({0, 0}, {5, 5});
 	*/
 	inline auto distance(const fluke::Point a, const fluke::Point& b) {
 		return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
+	}
+
+
+
+	/*
+		Distance algorithm, return the distance between 2 cartesian points on a 2d plane.
+
+		This variant of the distance algorithm is the Manhatten distance or Taxi Cab distance.
+
+		example:
+			auto dist = fluke::distance_abs({0, 0}, {5, 5});
+	*/
+	inline auto distance_abs(const fluke::Point a, const fluke::Point& b) {
+		return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 	}
 
 

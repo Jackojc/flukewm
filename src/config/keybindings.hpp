@@ -12,26 +12,26 @@ namespace fluke::config {
 
 	constexpr fluke::Keys keybindings {
 		// Move.
-		fluke::Key{ keys::super | keys::shift, keys::left,  ACTION(fluke::action_resize, -10, 0, 0, 0) },
-		fluke::Key{ keys::super | keys::shift, keys::right, ACTION(fluke::action_resize, +10, 0, 0, 0) },
-		fluke::Key{ keys::super | keys::shift, keys::up,    ACTION(fluke::action_resize, 0, -10, 0, 0) },
-		fluke::Key{ keys::super | keys::shift, keys::down,  ACTION(fluke::action_resize, 0, +10, 0, 0) },
+		fluke::Key{ keys::super | keys::shift, keys::left,  ACTION(fluke::action_resize, -30, 0, 0, 0) },
+		fluke::Key{ keys::super | keys::shift, keys::right, ACTION(fluke::action_resize, +30, 0, 0, 0) },
+		fluke::Key{ keys::super | keys::shift, keys::up,    ACTION(fluke::action_resize, 0, -30, 0, 0) },
+		fluke::Key{ keys::super | keys::shift, keys::down,  ACTION(fluke::action_resize, 0, +30, 0, 0) },
 
 		// Grow.
-		fluke::Key{ keys::super | keys::alt, keys::left,  ACTION(fluke::action_resize, -10, 0, +10, 0) },
-		fluke::Key{ keys::super | keys::alt, keys::right, ACTION(fluke::action_resize, 0, 0, +10, 0) },
-		fluke::Key{ keys::super | keys::alt, keys::up,    ACTION(fluke::action_resize, 0, -10, 0, +10) },
-		fluke::Key{ keys::super | keys::alt, keys::down,  ACTION(fluke::action_resize, 0, 0, 0, +10) },
+		fluke::Key{ keys::super | keys::alt, keys::left,  ACTION(fluke::action_resize, -20, 0, +20, 0) },
+		fluke::Key{ keys::super | keys::alt, keys::right, ACTION(fluke::action_resize, 0, 0, +20, 0) },
+		fluke::Key{ keys::super | keys::alt, keys::up,    ACTION(fluke::action_resize, 0, -20, 0, +20) },
+		fluke::Key{ keys::super | keys::alt, keys::down,  ACTION(fluke::action_resize, 0, 0, 0, +20) },
 
 		// Shrink.
-		fluke::Key{ keys::super | keys::alt | keys::shift, keys::left,  ACTION(fluke::action_resize, 0, 0, -10, 0) },
-		fluke::Key{ keys::super | keys::alt | keys::shift, keys::right, ACTION(fluke::action_resize, +10, 0, -10, 0) },
-		fluke::Key{ keys::super | keys::alt | keys::shift, keys::up,    ACTION(fluke::action_resize, 0, 0, 0, -10) },
-		fluke::Key{ keys::super | keys::alt | keys::shift, keys::down,  ACTION(fluke::action_resize, 0, +10, 0, -10) },
+		fluke::Key{ keys::super | keys::alt | keys::shift, keys::left,  ACTION(fluke::action_resize, 0, 0, -20, 0) },
+		fluke::Key{ keys::super | keys::alt | keys::shift, keys::right, ACTION(fluke::action_resize, +20, 0, -20, 0) },
+		fluke::Key{ keys::super | keys::alt | keys::shift, keys::up,    ACTION(fluke::action_resize, 0, 0, 0, -20) },
+		fluke::Key{ keys::super | keys::alt | keys::shift, keys::down,  ACTION(fluke::action_resize, 0, +20, 0, -20) },
 
 		// Grow or shrink equally on all sides simultaneously.
-		fluke::Key{ keys::super, keys::equal, ACTION(fluke::action_resize, -10, -10, +20, +20) },
-		fluke::Key{ keys::super, keys::minus, ACTION(fluke::action_resize, +10, +10, -20, -20) },
+		fluke::Key{ keys::super, keys::equal, ACTION(fluke::action_resize, -20, -20, +30, +30) },
+		fluke::Key{ keys::super, keys::minus, ACTION(fluke::action_resize, +20, +20, -30, -30) },
 
 		// Focus switching.
 		fluke::Key{ keys::alt, keys::tab,               ACTION(fluke::action_focus, FOCUS_NEXT) },
