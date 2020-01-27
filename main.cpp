@@ -51,12 +51,7 @@ int main() {
 	const auto randr_ext = xcb_get_extension_data(conn, &xcb_randr_id);
 	const auto randr_base = randr_ext->first_event;
 
-	fluke::randr_select_input(conn, conn.root(),
-		XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE   |
-		XCB_RANDR_NOTIFY_MASK_OUTPUT_CHANGE   |
-		XCB_RANDR_NOTIFY_MASK_CRTC_CHANGE     |
-		XCB_RANDR_NOTIFY_MASK_OUTPUT_PROPERTY
-	);
+	fluke::randr_select_input(conn, conn.root(), fluke::XCB_RANDR_EVENTS);
 
 
 	// Register to receive window manager events. Only one window manager can be active at one time.
@@ -182,6 +177,12 @@ int main() {
 			case XCB_CONFIGURE_REQUEST:
 				fluke::event_configure_request(conn,
 					fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(event))
+				);
+				continue;
+
+			case XCB_MOTION_NOTIFY:
+				fluke::event_motion_notify(conn,
+					fluke::event_cast<fluke::MotionNotifyEvent>(std::move(event))
 				);
 				continue;
 

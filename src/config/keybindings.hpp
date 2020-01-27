@@ -30,8 +30,8 @@ namespace fluke::config {
 		fluke::Key{ keys::super | keys::alt | keys::shift, keys::down,  ACTION(fluke::action_resize, 0, +20, 0, -20) },
 
 		// Grow or shrink equally on all sides simultaneously.
-		fluke::Key{ keys::super, keys::equal, ACTION(fluke::action_resize, -20, -20, +30, +30) },
-		fluke::Key{ keys::super, keys::minus, ACTION(fluke::action_resize, +20, +20, -30, -30) },
+		fluke::Key{ keys::super, keys::equal, ACTION(fluke::action_resize, -20, -20, +40, +40) },
+		fluke::Key{ keys::super, keys::minus, ACTION(fluke::action_resize, +20, +20, -40, -40) },
 
 		// Focus switching.
 		fluke::Key{ keys::alt, keys::tab,               ACTION(fluke::action_focus, FOCUS_NEXT) },
@@ -55,15 +55,28 @@ namespace fluke::config {
 		fluke::Key{ keys::super | keys::control | keys::shift, keys::up,    ACTION(fluke::action_snap, SNAP_CORNER_BOTTOMRIGHT) },
 		fluke::Key{ keys::super | keys::control | keys::shift, keys::down,  ACTION(fluke::action_snap, SNAP_CORNER_BOTTOMLEFT) },
 
+		// Monitor focus.
+		fluke::Key{ keys::super | keys::alt, keys::number_1, ACTION(fluke::action_focus_display_index, 0) },
+		fluke::Key{ keys::super | keys::alt, keys::number_2, ACTION(fluke::action_focus_display_index, 1) },
+		fluke::Key{ keys::super | keys::alt, keys::number_3, ACTION(fluke::action_focus_display_index, 2) },
+		fluke::Key{ keys::super | keys::alt, keys::number_4, ACTION(fluke::action_focus_display_index, 3) },
+		fluke::Key{ keys::super | keys::alt, keys::number_5, ACTION(fluke::action_focus_display_index, 4) },
+		fluke::Key{ keys::super | keys::alt, keys::number_6, ACTION(fluke::action_focus_display_index, 5) },
+		fluke::Key{ keys::super | keys::alt, keys::number_7, ACTION(fluke::action_focus_display_index, 6) },
+		fluke::Key{ keys::super | keys::alt, keys::number_8, ACTION(fluke::action_focus_display_index, 7) },
+		fluke::Key{ keys::super | keys::alt, keys::number_9, ACTION(fluke::action_focus_display_index, 8) },
+
 		// Tiling & Misc.
 		fluke::Key{ keys::super, keys::t, ACTION(fluke::action_layout_masterslave, MASTER_LEFT, 60) },
 		fluke::Key{ keys::super | keys::shift, keys::t, ACTION(fluke::action_layout_masterslave, MASTER_RIGHT, 60) },
-		fluke::Key{ keys::super, keys::c, ACTION(fluke::action_center) },
+		fluke::Key{ keys::super, keys::c, ACTION(fluke::action_center_resize) },
 
 		// Launch programs.
 		fluke::Key{ keys::super, keys::ret, RUN("st") },
 		fluke::Key{ keys::super, keys::tab, RUN("dmenu_run", "-i") },
 		fluke::Key{ keys::super, keys::w,   RUN("wallpaper_random") },
+		fluke::Key{ keys::super, keys::m,   RUN("xmmv") },
+		fluke::Key{ keys::super, keys::r,   RUN("xmrs") },
 	};
 }
 

@@ -25,7 +25,7 @@ symbols ?= yes
 # Debugging
 ifeq ($(debug),no)
 	symbols ?= no
-	PROGRAM_CXXFLAGS=-flto -O3 -march=native -DNDEBUG $(CXXFLAGS)
+	PROGRAM_CXXFLAGS=-flto -Ofast -march=native -DNDEBUG $(CXXFLAGS)
 
 else ifeq ($(debug),yes)
 	symbols ?= yes

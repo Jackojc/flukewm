@@ -41,14 +41,16 @@ namespace fluke {
 				std::cout << fluke::as_rect(geom) << '\n';
 	*/
 	template <typename T, typename F, typename... Ts>
-	inline auto dispatch_consume(fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args) {
+	inline decltype(auto) dispatch_consume(
+		fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args
+	) {
 		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("dispatch_consume"), "'")
-		std::vector<decltype(func(changing_arg.at(0), std::forward<Ts>(args)...))> request;
+		std::vector<decltype(func(changing_arg.front(), std::forward<Ts>(args)...))> request;
 		std::vector<decltype(fluke::get(conn, request.front()))> reply;
 
 		// Fire off a request for each argument in `changing_arg` while passing
 		// the unchanging args too.
-		for (auto& x: changing_arg)
+		for (const auto& x: changing_arg)
 			request.emplace_back(func(x, std::forward<Ts>(args)...));
 
 		// Block on each request to fetch it's reply.
@@ -606,6 +608,137 @@ namespace fluke {
 		}
 
 		return fluke::Rect{0, 0, 0, 0};
+	}
+
+
+
+	/*
+		Check if a given window is valid.
+
+		example:
+			bool is_valid = fluke::is_valid_window(conn, win);
+	*/
+	inline bool is_valid_window(fluke::Connection& conn, xcb_window_t win) {
+		return win != conn.root() and win != XCB_NONE;
+	}
+
+
+
+	/*
+		Returns a vector of windows which are mapped, not ignored and are on
+		the same display as the mouse cursor.
+
+		example:
+			auto windows = fluke::get_mapped_windows_on_hovered_display(conn);
+
+			for (xcb_window_t win: windows)
+				std::cout << fluke::to_hex(win) << '\n';
+	*/
+	inline auto get_mapped_windows_on_hovered_display(fluke::Connection& conn) {
+		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_mapped_windows_on_hovered_display"), "'")
+
+		// Get all windows.
+		auto windows = fluke::get_tree(conn);
+
+		// Get the geometry and attributes of all windows,
+		// each element in the returned vector is of type
+		// `std::tuple<fluke::GetWindowAttributesReply, fluke::GetGeometryReply>`.
+		const auto attrs_geoms = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+			return std::tuple{
+				fluke::get_window_attributes(conn, win),
+				fluke::get_geometry(conn, win)
+			};
+		}, windows);
+
+
+		// Get the rect of the display which contains the mouse cursor.
+		auto hovered_rect = fluke::get_hovered_display_rect(conn);
+
+
+		// We use `i` to allow indexing `attrs_geoms` while simultaneously indexing `windows`.
+		decltype(attrs_geoms)::size_type i = 0;
+
+		// Remove windows which have override_redirect set, are unmapped and
+		// which are not on the same diplay as the pointer.
+		const auto should_remove = [&] (xcb_window_t) {
+			const auto& [attr, geom] = attrs_geoms[i++];
+
+			return
+				fluke::is_ignored(attr) or
+				not fluke::is_mapped(attr) or
+				hovered_rect != fluke::get_nearest_display_rect(conn, fluke::as_rect(geom))
+			;
+		};
+
+		windows.erase(std::remove_if(windows.begin(), windows.end(), should_remove), windows.end());
+
+		return windows;
+	}
+
+
+
+	/*
+		This function will center and resize a window on the currently hovered display.
+
+		example:
+			xcb_window_t focused = fluke::get_focused_window(conn);
+			fluke::center_resize_window_on_hovered_display(conn, focused);
+	*/
+	inline void center_resize_window_on_hovered_display(fluke::Connection& conn, xcb_window_t win) {
+		// Get rect of focused display.
+		const auto [display_x, display_y, display_w, display_h] = fluke::get_hovered_display_rect(conn);
+
+		// Resize window to a percentage of the screen size.
+		const auto w = (display_w * fluke::config::NEW_WINDOW_PERCENT) / 100;
+		const auto h = (display_h * fluke::config::NEW_WINDOW_PERCENT) / 100;
+
+		// Center the window on the screen.
+		const auto x = (display_x + display_w / 2) - w / 2;
+		const auto y = (display_y + display_h / 2) - h / 2;
+
+		// Register to receive events from the window and resize/move the window.
+		FLUKE_DEBUG_NOTICE_SUB("resizing and centering window.")
+		fluke::configure_window(conn, win, fluke::XCB_MOVE_RESIZE, x, y, w, h);
+	}
+
+
+
+	/*
+		This function will center a window on the currently hovered display.
+
+		example:
+			xcb_window_t focused = fluke::get_focused_window(conn);
+			fluke::center_window_on_hovered_display(conn, focused);
+	*/
+	inline void center_window_on_hovered_display(fluke::Connection& conn, xcb_window_t win) {
+		// Get window geometry.
+		const auto [window_x, window_y, window_w, window_h] =
+			fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win)));
+
+		// Get rect of focused display.
+		const auto [display_x, display_y, display_w, display_h] = fluke::get_hovered_display_rect(conn);
+
+		// Center the window on the screen.
+		const auto x = (display_x + display_w / 2) - window_w / 2;
+		const auto y = (display_y + display_h / 2) - window_h / 2;
+
+		FLUKE_DEBUG_NOTICE_SUB("center window.");
+		fluke::configure_window(conn, win, fluke::XCB_MOVE, x, y);
+	}
+
+
+
+	/*
+		Lock the mouse pointer to a window so that it cannot move outside its bounds.
+
+		example:
+			fluke::lock_pointer_to_window(conn, win);
+	*/
+	inline void lock_pointer_to_window(fluke::Connection& conn, xcb_window_t win) {
+		fluke::get(conn, fluke::grab_pointer(
+			conn, true, conn.root(),
+			XCB_NONE, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, win, XCB_NONE
+		));
 	}
 }
 
