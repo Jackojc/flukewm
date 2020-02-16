@@ -213,7 +213,7 @@ namespace fluke {
 	}
 
 
-	inline auto grab_pointer(
+	inline GrabPointerCookie grab_pointer(
 		fluke::Connection& conn,
 		bool owner_events,
 		xcb_window_t grab_window,
@@ -223,7 +223,7 @@ namespace fluke {
 		xcb_window_t confine_to,
 		xcb_cursor_t cursor
 	) {
-		return xcb_grab_pointer(
+		return xcb_grab_pointer_unchecked(
 			conn,
 			owner_events,
 			grab_window,
@@ -344,6 +344,11 @@ namespace fluke {
 		xcb_randr_select_input(conn, win, mask);
 	}
 
+
+
+	inline void ungrab_pointer(fluke::Connection& conn) {
+		xcb_ungrab_pointer(conn, XCB_CURRENT_TIME);
+	}
 
 
 

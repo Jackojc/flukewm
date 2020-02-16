@@ -6,6 +6,12 @@ namespace fluke {
 	// Hooks called on launch and exit.
 	inline void on_launch(fluke::Connection&) {
 		fluke::exec("xsetroot", "-cursor_name", "left_ptr");
+		fluke::exec("keyboard_set");
+		fluke::exec("run_once","picom");
+		fluke::exec("run_once","pulseaudio", "--start");
+		fluke::exec("run_once","dunst");
+		fluke::exec("autorandr", "-c");
+		fluke::exec("wallpaper_random");
 	}
 
 	inline void on_exit(fluke::Connection&) {}
@@ -53,7 +59,10 @@ namespace fluke {
 
 
 	// Randr/screen hooks.
-	inline void on_randr_screen_change(fluke::Connection&, const fluke::RandrScreenChangeNotifyEvent&) {}
+	inline void on_randr_screen_change(fluke::Connection&, const fluke::RandrScreenChangeNotifyEvent&) {
+		fluke::exec("autorandr", "-c");
+	}
+
 	inline void on_randr_notify(fluke::Connection&, const fluke::RandrNotifyEvent&) {}
 }
 

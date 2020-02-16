@@ -11,14 +11,20 @@ namespace fluke {
 	inline void event_enter_notify(fluke::Connection& conn, const fluke::EnterNotifyEvent& e) {
 		const xcb_window_t win = e->event;
 
-		if (e->mode != XCB_NOTIFY_MODE_NORMAL and e->mode != XCB_NOTIFY_MODE_UNGRAB)
-			return;
+		// if (
+		// 	e->mode != XCB_NOTIFY_MODE_NORMAL or
+		// 	e->mode != XCB_NOTIFY_MODE_UNGRAB or
+		// 	e->mode != XCB_NOTIFY_DETAIL_INFERIOR
+		// )
+		// 	return;
 
 		fluke::on_hover_in(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("ENTER_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
+
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
 
@@ -34,6 +40,19 @@ namespace fluke {
 			"event '", tinge::fg::make_yellow("LEAVE_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
+
+
+		// auto [cursor_x, cursor_y] = fluke::get_pointer_point(conn);
+		// const auto [x, y, w, h] =
+		// 	fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, fluke::get_focused_window(conn))));
+
+		// if (fluke::aabb({x, y, w, h}, {cursor_x, cursor_y}))
+		// 	return;
+
+		// cursor_x = std::clamp<decltype(x)>(cursor_x, x, x + w);
+		// cursor_y = std::clamp<decltype(y)>(cursor_y, y, y + h);
+
+		// fluke::warp_pointer(conn, XCB_NONE, conn.root(), 0, 0, 0, 0, cursor_x, cursor_y);
 	}
 
 
@@ -65,10 +84,7 @@ namespace fluke {
 		)
 
 		// Move cursor to center of window.
-		FLUKE_DEBUG_NOTICE_SUB("centering pointer inside window.")
-
-		fluke::lock_pointer_to_window(conn, win);
-		fluke::center_pointer_in_rect(conn, fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win))));
+		// fluke::center_pointer_in_rect(conn, fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win))));
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
 	}
 
@@ -122,7 +138,6 @@ namespace fluke {
 
 
 		// Find the currently focused display to launch the new window on.
-		FLUKE_DEBUG_NOTICE_SUB("getting focused window and display.")
 		const auto [display_x, display_y, display_w, display_h] = fluke::get_hovered_display_rect(conn);
 
 
@@ -135,7 +150,6 @@ namespace fluke {
 		const auto y = (display_y + display_h / 2) - h / 2;
 
 		// Register to receive events from the window and resize/move the window.
-		FLUKE_DEBUG_NOTICE_SUB("resising and moving window.")
 		fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
 		fluke::configure_window(
 			conn, win,
@@ -154,24 +168,31 @@ namespace fluke {
 	inline void event_destroy_notify(fluke::Connection& conn, const fluke::DestroyNotifyEvent& e) {
 		const xcb_window_t win = e->window;
 
+		if (e->event != win)
+			return;
+
 		fluke::on_destroy(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("DESTROY_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
-		// Focus next alive window
-		const auto windows = fluke::get_mapped_windows(conn);
+		// Get all of the mapped windows.
+		auto windows = fluke::get_mapped_windows_on_hovered_display(conn);
 
-		if (windows.size() == 0)
+		if (windows.size() <= 1)
 			return;
 
-		const xcb_window_t new_win = windows.back();
+		// Get the currently focused window.
+		const xcb_window_t focused = fluke::get_focused_window(conn);
+		fluke::remove_focused_window(conn, windows);
 
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
-		fluke::configure_window(conn, new_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		const auto next_win = windows.front();
 
-		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, new_win);
+		// Set focus to new window and shuffle the window stack around.
+		fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
+		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, next_win);
 	}
 
 
@@ -190,8 +211,16 @@ namespace fluke {
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
+		const xcb_window_t focused = fluke::get_focused_window(conn);
+
+
 		fluke::map_window(conn, win);
+
+		if (fluke::is_valid_window(conn, focused))
+			fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
+
 		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
@@ -252,8 +281,22 @@ namespace fluke {
 		Note that this callback can be very hot.
 	*/
 	inline void event_motion_notify(fluke::Connection& conn, const fluke::MotionNotifyEvent& e) {
+		namespace conf = fluke::config;
+
 		fluke::on_motion(conn, e);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("MOTION_NOTIFY"), "'" )
+
+		// auto [cursor_x, cursor_y] = fluke::Point{e->root_x, e->root_y};
+		// const auto [x, y, w, h] =
+		// 	fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, fluke::get_focused_window(conn))));
+
+		// if (fluke::aabb({x, y, w, h}, {cursor_x, cursor_y}))
+		// 	return;
+
+		// cursor_x = std::clamp<decltype(x)>(cursor_x, x, x + w);
+		// cursor_y = std::clamp<decltype(y)>(cursor_y, y, y + h);
+
+		// fluke::warp_pointer(conn, XCB_NONE, conn.root(), 0, 0, 0, 0, cursor_x, cursor_y);
 	}
 
 

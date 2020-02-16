@@ -18,7 +18,7 @@ namespace fluke {
 	*/
 	template <typename... Ts>
 	bool exec(const char* arg, Ts&&... args) {
-		FLUKE_DEBUG_NOTICE("run '", tinge::fg::make_yellow(arg), "'")
+		FLUKE_DEBUG_NOTICE("run '", tinge::fg::make_yellow(arg), tinge::strcat(" ", tinge::fg::make_yellow(args))..., "'")
 
 		if (fork() != 0)
 			return false;

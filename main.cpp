@@ -76,9 +76,17 @@ int main() {
 	// (if no window is focused an error will be generated but we just ignore it)
 	xcb_window_t focused = fluke::get_focused_window(conn);
 
-	// Set the stacking mode, border width and border colour for the focused window.
-	fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE, fluke::config::BORDER_SIZE, XCB_STACK_MODE_ABOVE);
-	fluke::change_window_attributes(conn, focused, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_ACTIVE);
+	if (fluke::is_valid_window(conn, focused)) {
+		// Set the stacking mode, border width and border colour for the focused window.
+		fluke::configure_window(
+			conn, focused,
+			XCB_CONFIG_WINDOW_BORDER_WIDTH | XCB_CONFIG_WINDOW_STACK_MODE,
+			fluke::config::BORDER_SIZE, XCB_STACK_MODE_ABOVE
+		);
+
+		fluke::set_input_focus(conn, XCB_NONE, XCB_NONE);
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, focused);
+	}
 
 
 	// Register keybindings defined in the `keys` structure of the config.
@@ -120,6 +128,24 @@ int main() {
 
 		// Handle all events.
 		switch (ev_type) {
+			case XCB_MOTION_NOTIFY:
+				fluke::event_motion_notify(conn,
+					fluke::event_cast<fluke::MotionNotifyEvent>(std::move(event))
+				);
+				continue;
+
+			case XCB_CONFIGURE_REQUEST:
+				fluke::event_configure_request(conn,
+					fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(event))
+				);
+				continue;
+
+			case XCB_KEY_PRESS:
+				fluke::event_keypress(conn,
+					fluke::event_cast<fluke::KeyPressEvent>(std::move(event))
+				);
+				continue;
+
 			case 0:
 				fluke::event_error(conn,
 					fluke::event_cast<fluke::Error>(std::move(event))
@@ -171,24 +197,6 @@ int main() {
 			case XCB_UNMAP_NOTIFY:
 				fluke::event_unmap_notify(conn,
 					fluke::event_cast<fluke::UnmapNotifyEvent>(std::move(event))
-				);
-				continue;
-
-			case XCB_CONFIGURE_REQUEST:
-				fluke::event_configure_request(conn,
-					fluke::event_cast<fluke::ConfigureRequestEvent>(std::move(event))
-				);
-				continue;
-
-			case XCB_MOTION_NOTIFY:
-				fluke::event_motion_notify(conn,
-					fluke::event_cast<fluke::MotionNotifyEvent>(std::move(event))
-				);
-				continue;
-
-			case XCB_KEY_PRESS:
-				fluke::event_keypress(conn,
-					fluke::event_cast<fluke::KeyPressEvent>(std::move(event))
 				);
 				continue;
 
