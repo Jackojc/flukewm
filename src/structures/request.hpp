@@ -21,7 +21,7 @@ namespace fluke {
 
 		// Constructors.
 		constexpr Cookie() {}
-		constexpr Cookie(cookie_t cookie_): cookie{cookie_} {}
+		explicit constexpr Cookie(cookie_t cookie_): cookie{cookie_} {}
 		constexpr Cookie(const Cookie& other): cookie{other.cookie} {}
 
 		// Assignment operator.

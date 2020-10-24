@@ -5,11 +5,11 @@
 
 
 namespace fluke {
-	namespace detail {
-		void cleanup_connection(xcb_connection_t* conn) noexcept {
-			xcb_disconnect(conn);
-		}
-	}
+	// namespace detail {
+	// 	void cleanup_connection(xcb_connection_t* conn) noexcept {
+	// 		xcb_disconnect(conn);
+	// 	}
+	// }
 
 	class Connection {
 		// Data
@@ -24,7 +24,7 @@ namespace fluke {
 			// We keep a pointer to the main screen, we can use this to get
 			// the root window ID.
 
-			std::unique_ptr<xcb_connection_t, decltype(&detail::cleanup_connection)> conn;
+			std::unique_ptr<xcb_connection_t, decltype(&xcb_disconnect)> conn;
 			std::unique_ptr<xcb_key_symbols_t, decltype(&xcb_key_symbols_free)> key_symbols;
 
 			xcb_screen_t* scrn;
@@ -33,7 +33,7 @@ namespace fluke {
 		// Constructor
 		public:
 			Connection():
-				conn(xcb_connect(nullptr, nullptr), &detail::cleanup_connection),
+				conn(xcb_connect(nullptr, nullptr), &xcb_disconnect),
 				key_symbols(xcb_key_symbols_alloc(conn.get()), &xcb_key_symbols_free),
 				scrn(xcb_setup_roots_iterator(xcb_get_setup(conn.get())).data)
 			{
