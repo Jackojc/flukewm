@@ -11,14 +11,20 @@ namespace fluke {
 	inline void event_enter_notify(fluke::Connection& conn, const fluke::EnterNotifyEvent& e) {
 		const xcb_window_t win = e->event;
 
-		if (e->mode != XCB_NOTIFY_MODE_NORMAL and e->mode != XCB_NOTIFY_MODE_UNGRAB)
-			return;
+		// if (
+		// 	e->mode != XCB_NOTIFY_MODE_NORMAL or
+		// 	e->mode != XCB_NOTIFY_MODE_UNGRAB or
+		// 	e->mode != XCB_NOTIFY_DETAIL_INFERIOR
+		// )
+		// 	return;
 
-		fluke::on_hover_in(conn);
+		fluke::on_hover_in(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("ENTER_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
+
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
 
@@ -29,11 +35,24 @@ namespace fluke {
 	inline void event_leave_notify(fluke::Connection& conn, const fluke::LeaveNotifyEvent& e) {
 		const xcb_window_t win = e->event;
 
-		fluke::on_hover_out(conn);
+		fluke::on_hover_out(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("LEAVE_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
+
+
+		// auto [cursor_x, cursor_y] = fluke::get_pointer_point(conn);
+		// const auto [x, y, w, h] =
+		// 	fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, fluke::get_focused_window(conn))));
+
+		// if (fluke::aabb({x, y, w, h}, {cursor_x, cursor_y}))
+		// 	return;
+
+		// cursor_x = std::clamp<decltype(x)>(cursor_x, x, x + w);
+		// cursor_y = std::clamp<decltype(y)>(cursor_y, y, y + h);
+
+		// fluke::warp_pointer(conn, XCB_NONE, conn.root(), 0, 0, 0, 0, cursor_x, cursor_y);
 	}
 
 
@@ -58,16 +77,14 @@ namespace fluke {
 			return;
 		}
 
-		fluke::on_focus_in(conn);
+		fluke::on_focus_in(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("FOCUS_IN"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
 		// Move cursor to center of window.
-		FLUKE_DEBUG_NOTICE_SUB("centering pointer inside window.")
-
-		fluke::center_pointer_in_rect(conn, fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win))));
+		// fluke::center_pointer_in_rect(conn, fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win))));
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, config::BORDER_COLOUR_ACTIVE);
 	}
 
@@ -82,9 +99,14 @@ namespace fluke {
 		const xcb_window_t win = e->event;
 
 		// This is needed to prevent border from flickering when moving/resizing with keybinds.
-		if (e->mode == XCB_NOTIFY_MODE_GRAB or e->mode == XCB_NOTIFY_MODE_UNGRAB) return;
+		if (
+			e->mode == XCB_NOTIFY_MODE_GRAB or
+			e->mode == XCB_NOTIFY_MODE_UNGRAB
+		) {
+			return;
+		}
 
-		fluke::on_focus_out(conn);
+		fluke::on_focus_out(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("FOCUS_OUT"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
@@ -108,7 +130,7 @@ namespace fluke {
 		if (fluke::is_ignored(fluke::get(conn, fluke::get_window_attributes(conn, win))))
 			return;
 
-		fluke::on_create(conn);
+		fluke::on_create(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("CREATE_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
@@ -116,7 +138,6 @@ namespace fluke {
 
 
 		// Find the currently focused display to launch the new window on.
-		FLUKE_DEBUG_NOTICE_SUB("getting focused window and display.")
 		const auto [display_x, display_y, display_w, display_h] = fluke::get_hovered_display_rect(conn);
 
 
@@ -129,7 +150,6 @@ namespace fluke {
 		const auto y = (display_y + display_h / 2) - h / 2;
 
 		// Register to receive events from the window and resize/move the window.
-		FLUKE_DEBUG_NOTICE_SUB("resising and moving window.")
 		fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
 		fluke::configure_window(
 			conn, win,
@@ -148,24 +168,31 @@ namespace fluke {
 	inline void event_destroy_notify(fluke::Connection& conn, const fluke::DestroyNotifyEvent& e) {
 		const xcb_window_t win = e->window;
 
-		fluke::on_destroy(conn);
+		if (e->event != win)
+			return;
+
+		fluke::on_destroy(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("DESTROY_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
-		// Focus next alive window
-		const auto windows = fluke::get_mapped_windows(conn);
+		// Get all of the mapped windows.
+		auto windows = fluke::get_mapped_windows_on_hovered_display(conn);
 
-		if (windows.size() == 0)
+		if (windows.size() <= 1)
 			return;
 
-		const xcb_window_t new_win = windows.back();
+		// Get the currently focused window.
+		const xcb_window_t focused = fluke::get_focused_window(conn);
+		fluke::remove_focused_window(conn, windows);
 
-		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
-		fluke::configure_window(conn, new_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		const auto next_win = windows.front();
 
-		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, new_win);
+		// Set focus to new window and shuffle the window stack around.
+		fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
+		fluke::configure_window(conn, next_win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, next_win);
 	}
 
 
@@ -178,14 +205,22 @@ namespace fluke {
 	inline void event_map_request(fluke::Connection& conn, const fluke::MapRequestEvent& e) {
 		const xcb_window_t win = e->window;
 
-		fluke::on_map(conn);
+		fluke::on_map(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("MAP_REQUEST"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
 		)
 
+		const xcb_window_t focused = fluke::get_focused_window(conn);
+
+
 		fluke::map_window(conn, win);
+
+		if (fluke::is_valid_window(conn, focused))
+			fluke::configure_window(conn, focused, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_BELOW);
+
 		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_STACK_MODE, XCB_STACK_MODE_ABOVE);
+
 		fluke::set_input_focus(conn, XCB_INPUT_FOCUS_PARENT, win);
 	}
 
@@ -197,7 +232,7 @@ namespace fluke {
 	inline void event_unmap_notify(fluke::Connection& conn, const fluke::UnmapNotifyEvent& e) {
 		const xcb_window_t win = e->window;
 
-		fluke::on_unmap(conn);
+		fluke::on_unmap(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("UNMAP_NOTIFY"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
@@ -216,7 +251,7 @@ namespace fluke {
 		const xcb_window_t win = e->window;
 		const uint16_t mask = e->value_mask;
 
-		fluke::on_configure(conn);
+		fluke::on_configure(conn, e);
 		FLUKE_DEBUG_NOTICE(
 			"event '", tinge::fg::make_yellow("CONFIGURE_REQUEST"),
 			"' for '", tinge::fg::make_yellow(fluke::to_hex(win)), "'"
@@ -242,10 +277,35 @@ namespace fluke {
 
 
 	/*
+		This event is triggered every time the pointer is moved.
+		Note that this callback can be very hot.
+	*/
+	inline void event_motion_notify(fluke::Connection& conn, const fluke::MotionNotifyEvent& e) {
+		namespace conf = fluke::config;
+
+		fluke::on_motion(conn, e);
+		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("MOTION_NOTIFY"), "'" )
+
+		// auto [cursor_x, cursor_y] = fluke::Point{e->root_x, e->root_y};
+		// const auto [x, y, w, h] =
+		// 	fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, fluke::get_focused_window(conn))));
+
+		// if (fluke::aabb({x, y, w, h}, {cursor_x, cursor_y}))
+		// 	return;
+
+		// cursor_x = std::clamp<decltype(x)>(cursor_x, x, x + w);
+		// cursor_y = std::clamp<decltype(y)>(cursor_y, y, y + h);
+
+		// fluke::warp_pointer(conn, XCB_NONE, conn.root(), 0, 0, 0, 0, cursor_x, cursor_y);
+	}
+
+
+
+	/*
 		This event is triggered when a property is changed, usually related to ICCCM or EWMH.
 	*/
 	inline void event_property_notify(fluke::Connection& conn, const fluke::PropertyNotifyEvent& e) {
-		fluke::on_property(conn);
+		fluke::on_property(conn, e);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("PROPERTY_NOTIFY"), "'" )
 	}
 
@@ -255,7 +315,7 @@ namespace fluke {
 		This event is triggered when a window sends us a custom message, usally ICCCM or EWMH.
 	*/
 	inline void event_client_message(fluke::Connection& conn, const fluke::ClientMessageEvent& e) {
-		fluke::on_client_message(conn);
+		fluke::on_client_message(conn, e);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("CLIENT_MESSAGE"), "'" )
 	}
 
@@ -268,7 +328,7 @@ namespace fluke {
 		We also move any windows that may be off-screen back into view.
 	*/
 	inline void event_randr_screen_change_notify(fluke::Connection& conn, const fluke::RandrScreenChangeNotifyEvent& e) {
-		fluke::on_randr_screen_change(conn);
+		fluke::on_randr_screen_change(conn, e);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("RANDR_SCREEN_CHANGE_NOTIFY"), "'" )
 
 		// Move windows that are off screen back into view.
@@ -280,7 +340,7 @@ namespace fluke {
 		I'm not actually sure when this gets triggered or why.
 	*/
 	inline void event_randr_notify(fluke::Connection& conn, const fluke::RandrNotifyEvent& e) {
-		fluke::on_randr_notify(conn);
+		fluke::on_randr_notify(conn, e);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("RANDR_NOTIFY"), "'" )
 	}
 
@@ -294,7 +354,7 @@ namespace fluke {
 	inline void event_keypress(fluke::Connection& conn, const fluke::KeyPressEvent& e) {
 		const xcb_keysym_t keysym = fluke::get_keysym(conn, e->detail);
 
-		fluke::on_keypress(conn);
+		fluke::on_keypress(conn, e);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("KEYPRESS"), "'" )
 
 		// Remove any modifiers from a mask.
@@ -319,7 +379,7 @@ namespace fluke {
 
 		BadWindow errors are expected to happen and as such, are ignored explicitly.
 	*/
-	inline void event_error(fluke::Connection& conn, fluke::Error&& e) {
+	inline void event_error(fluke::Connection& conn, const fluke::Error& e) {
 		const int major_code = e->major_code;
 		const int minor_code = e->minor_code;
 		const int error_code = e->error_code;
@@ -329,7 +389,7 @@ namespace fluke {
 		if (error_code == 3)
 			return;
 
-		fluke::on_error(conn);
+		fluke::on_error(conn, e);
 		FLUKE_DEBUG_NOTICE( "event '", tinge::fg::make_yellow("ERROR"), "'" )
 
 		// Make error names bright blue.

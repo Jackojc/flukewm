@@ -2,28 +2,11 @@
 
 #include <vector>
 #include <algorithm>
-#include <sstream>
-#include <string>
 #include <cmath>
 #include <fluke.hpp>
 
 
 namespace fluke {
-	/*
-		Converts a numeric argument to hexadecimal format with 0x prepended.
-
-		example:
-			std::cout << fluke::to_hex(fluke::get_focused_window(conn)) << '\n';
-	*/
-	template <typename T>
-	inline std::string to_hex(T&& arg) {
-		std::stringstream ss;
-		ss << "0x" << std::hex << arg;
-		return ss.str();
-	}
-
-
-
 	/*
 		Sends a series of requests all at once then immediatetely after
 		blocks until the replies are fetched.
@@ -41,14 +24,15 @@ namespace fluke {
 				std::cout << fluke::as_rect(geom) << '\n';
 	*/
 	template <typename T, typename F, typename... Ts>
-	inline auto dispatch_consume(fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("dispatch_consume"), "'")
-		std::vector<decltype(func(changing_arg.at(0), std::forward<Ts>(args)...))> request;
+	inline decltype(auto) dispatch_consume(
+		fluke::Connection& conn, F func, const std::vector<T>& changing_arg, Ts&&... args
+	) {
+		std::vector<decltype(func(changing_arg.front(), std::forward<Ts>(args)...))> request;
 		std::vector<decltype(fluke::get(conn, request.front()))> reply;
 
 		// Fire off a request for each argument in `changing_arg` while passing
 		// the unchanging args too.
-		for (auto& x: changing_arg)
+		for (const auto& x: changing_arg)
 			request.emplace_back(func(x, std::forward<Ts>(args)...));
 
 		// Block on each request to fetch it's reply.
@@ -70,18 +54,32 @@ namespace fluke {
 			}
 	*/
 	inline auto get_tree(fluke::Connection& conn) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_tree"), "'")
-
 		// Ask X for a list of windows, returns a pointer to
 		// an `xcb_query_tree_reply_t` structure.
 		const auto tree = fluke::get(conn, fluke::query_tree(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
 		// Each element is copied into the vector.
-		return std::vector<xcb_window_t>{
+		auto vec =  std::vector<xcb_window_t>{
 			xcb_query_tree_children(tree.get()),  // pointer to array of windows.
 			xcb_query_tree_children(tree.get()) + xcb_query_tree_children_length(tree.get())
 		};
+
+		std::reverse(vec.begin(), vec.end());
+
+		return vec;
+	}
+
+
+
+	/*
+		This function returns the currently focused window ID.
+
+		example:
+			xcb_window_t focused = fluke::get_focused_window(conn);
+	*/
+	inline auto get_focused_window(fluke::Connection& conn) {
+		return fluke::get(conn, fluke::get_input_focus(conn))->focus;
 	}
 
 
@@ -97,8 +95,6 @@ namespace fluke {
 				std::cout << fluke::to_hex(win) << '\n';
 	*/
 	inline auto get_all_windows(fluke::Connection& conn) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_all_windows"), "'")
-
 		// Get all windows.
 		auto windows = fluke::get_tree(conn);
 
@@ -135,8 +131,6 @@ namespace fluke {
 				std::cout << fluke::to_hex(win) << '\n';
 	*/
 	inline auto get_mapped_windows(fluke::Connection& conn) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_mapped_windows"), "'")
-
 		// Get all windows.
 		auto windows = fluke::get_tree(conn);
 
@@ -153,7 +147,11 @@ namespace fluke {
 		// they have asked to not be managed by the window manager.
 		const auto should_remove = [&] (xcb_window_t) {
 			const auto& attr = attrs[i++];
-			return fluke::is_ignored(attr) or not fluke::is_mapped(attr);
+
+			return
+				fluke::is_ignored(attr) or
+				not fluke::is_mapped(attr)
+			;
 		};
 
 		windows.erase(std::remove_if(windows.begin(), windows.end(), should_remove), windows.end());
@@ -170,8 +168,6 @@ namespace fluke {
 			auto providers = fluke::get_providers(conn);
 	*/
 	inline auto get_providers(fluke::Connection& conn) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_providers"), "'")
-
 		const auto provider_info = fluke::get(conn, fluke::randr_get_providers(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
@@ -192,8 +188,6 @@ namespace fluke {
 			auto outputs = fluke::get_provider_info(conn, provider);
 	*/
 	inline auto get_provider_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_provider_info"), "'")
-
 		const auto output_info = fluke::get(conn, fluke::randr_get_provider_info(conn, provider));
 
 		// Create a vector using start pointer and end pointer.
@@ -223,8 +217,6 @@ namespace fluke {
 			}
 	*/
 	inline auto get_screen_resources(fluke::Connection& conn) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_screen_resources"), "'")
-
 		const auto screen_resources = fluke::get(conn, fluke::randr_get_screen_resources_current(conn, conn.root()));
 
 		// Create a vector using start pointer and end pointer.
@@ -249,8 +241,6 @@ namespace fluke {
 			}
 	*/
 	inline auto get_crtcs(fluke::Connection& conn) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_crtcs"), "'")
-
 		const auto outputs = fluke::get_screen_resources(conn);
 
 		// Get output info for each display.
@@ -274,13 +264,43 @@ namespace fluke {
 
 
 	/*
-		Distance algorith, return the distance between 2 cartesian points on a 2d plane.
+		Distance algorithm, return the distance between 2 cartesian points on a 2d plane.
+
+		This variant of the function does not return the actual distance, rather, it
+		is used for cases where you need to compare two distances and find which one is
+		shorter/longer.
+
+		example:
+			auto dist = fluke::distance_fast({0, 0}, {5, 5});
+	*/
+	inline auto distance_fast(const fluke::Point a, const fluke::Point& b) {
+		return std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2);
+	}
+
+
+
+	/*
+		Distance algorithm, return the distance between 2 cartesian points on a 2d plane.
 
 		example:
 			auto dist = fluke::distance({0, 0}, {5, 5});
 	*/
 	inline auto distance(const fluke::Point a, const fluke::Point& b) {
 		return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
+	}
+
+
+
+	/*
+		Distance algorithm, return the distance between 2 cartesian points on a 2d plane.
+
+		This variant of the distance algorithm is the Manhatten distance or Taxi Cab distance.
+
+		example:
+			auto dist = fluke::distance_abs({0, 0}, {5, 5});
+	*/
+	inline auto distance_abs(const fluke::Point a, const fluke::Point& b) {
+		return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 	}
 
 
@@ -297,8 +317,6 @@ namespace fluke {
 			);
 	*/
 	inline fluke::Rect get_nearest_display_rect(fluke::Connection& conn, const fluke::Rect& r) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_nearest_display_rect"), "'")
-
 		// Destructure rect argument.
 		const auto [x_, y_, w_, h_] = r;
 
@@ -333,8 +351,6 @@ namespace fluke {
 			for (auto& keycode: fluke::get_keycodes(conn, key_keysym)) { ... }
 	*/
 	inline auto get_keycodes(fluke::Connection& conn, xcb_keysym_t sym) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_keycodes"), "'")
-
 		// Get a pointer to an array of keycodes.
 		const auto keycode_ptr = std::unique_ptr<xcb_keycode_t[], decltype(&std::free)>{
 			xcb_key_symbols_get_keycode(conn.keysyms(), sym), &std::free
@@ -380,29 +396,20 @@ namespace fluke {
 	*/
 	template <size_t N>
 	inline void register_keybindings(fluke::Connection& conn, const fluke::Keys<N>& keys) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("register_keybindings"), "'")
-
 		// Toggleable modifiers.
 		constexpr std::array modifiers{
-			uint32_t{0},
-			uint32_t{fluke::keys::caps_lock},
-			uint32_t{fluke::keys::num_lock},
-			uint32_t{fluke::keys::scroll_lock},
+			0u,
+
+			fluke::keys::caps_lock,
+			fluke::keys::num_lock,
+			fluke::keys::scroll_lock,
+
+			fluke::keys::caps_lock | fluke::keys::num_lock,
+			fluke::keys::caps_lock | fluke::keys::scroll_lock,
+			fluke::keys::num_lock  | fluke::keys::scroll_lock,
+
+			fluke::keys::caps_lock | fluke::keys::num_lock | fluke::keys::scroll_lock,
 		};
-
-		// Get every combination of modifiers.
-		FLUKE_DEBUG_NOTICE_SUB("generate modifier combinations.")
-
-		std::vector<uint32_t> modifiers_combinations;
-
-		// This is a bit untidy but it produces every combination of modifiers.
-		for (const auto a: modifiers) {
-			for (const auto b: modifiers) {
-				for (const auto c: modifiers) {
-					modifiers_combinations.emplace_back( a | b | c );
-				}
-			}
-		}
 
 		// Ungrab any keys which are already grabbed.
 		fluke::ungrab_key(conn, XCB_GRAB_ANY, conn.root(), XCB_MOD_MASK_ANY);
@@ -415,24 +422,12 @@ namespace fluke {
 				// This is so that our keybinding can work while various "locks" are
 				// active like caps lock.
 				// This will make X send us events for the registered bindings.
-				for (const auto& mod: modifiers_combinations)
+				for (const auto& mod: modifiers)
 					fluke::grab_key(
 						conn, true, conn.root(), key_mod | mod, keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC
 					);
 			}
 		}
-	}
-
-
-
-	/*
-		This function returns the currently focused window ID.
-
-		example:
-			xcb_window_t focused = fluke::get_focused_window(conn);
-	*/
-	inline auto get_focused_window(fluke::Connection& conn) {
-		return fluke::get(conn, fluke::get_input_focus(conn))->focus;
 	}
 
 
@@ -543,10 +538,10 @@ namespace fluke {
 		const auto [px, py] = p;
 
 		return
-			px > x and
-			py > y and
-			px < x + w and
-			py < y + h
+			px >= x and
+			py >= y and
+			px <= x + w and
+			py <= y + h
 		;
 	}
 
@@ -559,14 +554,7 @@ namespace fluke {
 			auto [x, y, w, h] = fluke::get_hovered_monitor(conn);
 	*/
 	inline fluke::Rect get_hovered_display_rect(fluke::Connection& conn) {
-		FLUKE_DEBUG_NOTICE_SUB("function '", tinge::fg::make_yellow("get_hovered_display_rect"), "'")
-
-		FLUKE_DEBUG_NOTICE_SUB("get pointer coordinates.")
 		const auto cursor = fluke::as_point(fluke::get(conn, fluke::query_pointer(conn, conn.root())));
-		FLUKE_DEBUG_NOTICE_SUB(cursor)
-
-
-		FLUKE_DEBUG_NOTICE_SUB("find monitor.")
 
 		for (const auto& disp: fluke::get_crtcs(conn)) {
 			const auto display_rect = fluke::as_rect(disp);
@@ -576,6 +564,136 @@ namespace fluke {
 		}
 
 		return fluke::Rect{0, 0, 0, 0};
+	}
+
+
+
+	/*
+		Check if a given window is valid.
+
+		example:
+			bool is_valid = fluke::is_valid_window(conn, win);
+	*/
+	inline bool is_valid_window(fluke::Connection& conn, xcb_window_t win) {
+		return win != conn.root() and win != XCB_NONE;
+	}
+
+
+
+	/*
+		Returns a vector of windows which are mapped, not ignored and are on
+		the same display as the mouse cursor.
+
+		example:
+			auto windows = fluke::get_mapped_windows_on_hovered_display(conn);
+
+			for (xcb_window_t win: windows)
+				std::cout << fluke::to_hex(win) << '\n';
+	*/
+	inline auto get_mapped_windows_on_hovered_display(fluke::Connection& conn) {
+		// Get all windows.
+		auto windows = fluke::get_tree(conn);
+
+		// Get the geometry and attributes of all windows,
+		// each element in the returned vector is of type
+		// `std::tuple<fluke::GetWindowAttributesReply, fluke::GetGeometryReply>`.
+		const auto attrs_geoms = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+			return std::tuple{
+				fluke::get_window_attributes(conn, win),
+				fluke::get_geometry(conn, win)
+			};
+		}, windows);
+
+
+		// Get the rect of the display which contains the mouse cursor.
+		auto hovered_rect = fluke::get_hovered_display_rect(conn);
+
+		// We use `i` to allow indexing `attrs_geoms` while simultaneously indexing `windows`.
+		decltype(attrs_geoms)::size_type i = 0;
+
+		// Remove windows which have override_redirect set, are unmapped and
+		// which are not on the same diplay as the pointer.
+		const auto should_remove = [&] (xcb_window_t win) {
+			const auto& [attr, geom] = attrs_geoms[i++];
+
+			return
+				fluke::is_ignored(attr) or
+				not fluke::is_mapped(attr) or
+				hovered_rect != fluke::get_nearest_display_rect(conn, fluke::as_rect(geom))
+			;
+		};
+
+		windows.erase(std::remove_if(windows.begin(), windows.end(), should_remove), windows.end());
+
+		return windows;
+	}
+
+
+
+	/*
+		This function will center and resize a window on the currently hovered display.
+
+		example:
+			xcb_window_t focused = fluke::get_focused_window(conn);
+			fluke::center_resize_window_on_hovered_display(conn, focused);
+	*/
+	inline void center_resize_window_on_hovered_display(fluke::Connection& conn, xcb_window_t win) {
+		// Get rect of focused display.
+		const auto [display_x, display_y, display_w, display_h] =
+			fluke::get_hovered_display_rect(conn);
+
+		// Resize window to a percentage of the screen size.
+		const auto w = (display_w * fluke::config::NEW_WINDOW_PERCENT) / 100;
+		const auto h = (display_h * fluke::config::NEW_WINDOW_PERCENT) / 100;
+
+		// Center the window on the screen.
+		const auto x = (display_x + display_w / 2) - w / 2;
+		const auto y = (display_y + display_h / 2) - h / 2;
+
+		// Register to receive events from the window and resize/move the window.
+		fluke::configure_window(conn, win, fluke::XCB_MOVE_RESIZE, x, y, w, h);
+	}
+
+
+
+	/*
+		This function will center a window on the currently hovered display.
+
+		example:
+			xcb_window_t focused = fluke::get_focused_window(conn);
+			fluke::center_window_on_hovered_display(conn, focused);
+	*/
+	inline void center_window_on_hovered_display(fluke::Connection& conn, xcb_window_t win) {
+		// Get window geometry.
+		const auto [window_x, window_y, window_w, window_h] =
+			fluke::as_rect(fluke::get(conn, fluke::get_geometry(conn, win)));
+
+		// Get rect of focused display.
+		const auto [display_x, display_y, display_w, display_h] =
+			fluke::get_hovered_display_rect(conn);
+
+		// Center the window on the screen.
+		const auto x = (display_x + display_w / 2) - window_w / 2;
+		const auto y = (display_y + display_h / 2) - window_h / 2;
+
+		fluke::configure_window(conn, win, fluke::XCB_MOVE, x, y);
+	}
+
+
+
+	/*
+		Get the current cursor position as a 2d coordinate.
+	*/
+	inline auto get_pointer_point(fluke::Connection& conn) {
+		return fluke::as_point(fluke::get(conn, fluke::query_pointer(conn, conn.root())));
+	}
+
+
+
+	/**/
+	inline auto remove_focused_window(fluke::Connection& conn, std::vector<xcb_window_t>& windows) {
+		auto focused = fluke::get_focused_window(conn);
+		windows.erase(std::remove(windows.begin(), windows.end(), focused), windows.end());
 	}
 }
 

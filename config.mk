@@ -20,16 +20,23 @@ PROGRAM_WARNINGS=-Wall -Wextra -Wmissing-include-dirs -Wsign-conversion -Wshadow
 # Make Flags
 debug ?= yes
 symbols ?= yes
+sanitize ?= no
 
 
 # Debugging
 ifeq ($(debug),no)
 	symbols ?= no
-	PROGRAM_CXXFLAGS=-flto -O3 -march=native -DNDEBUG $(CXXFLAGS)
+	PROGRAM_CXXFLAGS=-flto -Ofast -march=native -DNDEBUG $(CXXFLAGS)
 
 else ifeq ($(debug),yes)
 	symbols ?= yes
-	PROGRAM_CXXFLAGS=-Og -march=native -fsanitize=address,undefined,leak
+	ifeq ($(sanitize),yes)
+		PROGRAM_CXXFLAGS=-Og -march=native -fsanitize=address,undefined,leak
+	else ifeq ($(sanitize),no)
+		PROGRAM_CXXFLAGS=-Og -march=native
+	else
+$(error sanitize should be either yes or no)
+	endif
 
 else
 $(error debug should be either yes or no)
@@ -49,5 +56,5 @@ endif
 
 
 # Accumulate all flags
-COMPILE_COMMAND=$(CXX) $(PROGRAM_LDFLAGS) -std=$(STD) $(PROGRAM_WARNINGS) $(PROGRAM_CXXFLAGS) $(INCS) $(PROGRAM_CPPFLAGS) -o $(BUILD_DIR)/$(TARGET) $(SRC)
+COMPILE_COMMAND=$(CXX) $(PROGRAM_LDFLAGS) -std=$(STD) $(PROGRAM_WARNINGS) -m64 $(PROGRAM_CXXFLAGS) $(INCS) $(PROGRAM_CPPFLAGS) -o $(BUILD_DIR)/$(TARGET) $(SRC)
 

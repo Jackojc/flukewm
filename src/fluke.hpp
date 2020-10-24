@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <sstream>
+
 // #define TINGE_PLAIN
 
 #include <config/options.hpp>
@@ -28,6 +31,21 @@
 #define FLUKE_DEBUG_WARN_SUB(...)    FLUKE_DEBUG( tinge::warnln(tinge::before{'\t'}, __VA_ARGS__) )
 #define FLUKE_DEBUG_ERROR_SUB(...)   FLUKE_DEBUG( tinge::errorln(tinge::before{'\t'}, __VA_ARGS__) )
 #define FLUKE_DEBUG_SUCCESS_SUB(...) FLUKE_DEBUG( tinge::successln(tinge::before{'\t'}, __VA_ARGS__) )
+
+namespace fluke {
+	/*
+		Converts a numeric argument to hexadecimal format with 0x prepended.
+
+		example:
+			std::cout << fluke::to_hex(fluke::get_focused_window(conn)) << '\n';
+	*/
+	template <typename T>
+	inline std::string to_hex(T&& arg) {
+		std::stringstream ss;
+		ss << "0x" << std::hex << arg;
+		return ss.str();
+	}
+}
 
 #include <xcb/xcb.hpp>
 #include <xcb/xcb_errors.hpp>

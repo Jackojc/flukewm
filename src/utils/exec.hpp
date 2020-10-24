@@ -1,7 +1,7 @@
 #pragma once
 
 extern "C" {
-#include <unistd.h>
+	#include <unistd.h>
 }
 
 namespace fluke {
@@ -17,10 +17,10 @@ namespace fluke {
 				std::cout << "Error!\n";
 	*/
 	template <typename... Ts>
-	bool exec(const char* arg, Ts&&... args) {
-		FLUKE_DEBUG_NOTICE("run '", tinge::fg::make_yellow(arg), "'")
+	inline bool exec(const char* arg, Ts&&... args) {
+		FLUKE_DEBUG_NOTICE("run '", tinge::fg::make_yellow(arg), tinge::strcat(" ", tinge::fg::make_yellow(args))..., "'")
 
-		if (fork() != 0)
+		if (fork())
 			return false;
 
 		if (setsid() == -1)

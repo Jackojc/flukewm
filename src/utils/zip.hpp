@@ -8,17 +8,17 @@
 
 namespace fluke::detail {
 	// Implements std::remove_cvref_t which is >=c++20.
-	template< class T >
+	template <typename T>
 	struct remove_cvref {
 		using type = std::remove_cv_t<std::remove_reference_t<T>>;
 	};
 
-	template< class T >
+	template <typename T>
 	using remove_cvref_t = typename remove_cvref<T>::type;
 
 
 	// Remove r-value reference, just get T
-	template<typename T>
+	template <typename T>
 	using type_ref_t = std::conditional_t<
 		std::is_rvalue_reference_v<T>,
 		std::remove_reference_t<T>, // if true, remove ref

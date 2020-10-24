@@ -21,7 +21,7 @@ namespace fluke {
 
 		// Constructors.
 		constexpr Cookie() {}
-		constexpr Cookie(cookie_t cookie_): cookie{cookie_} {}
+		explicit constexpr Cookie(cookie_t cookie_): cookie{cookie_} {}
 		constexpr Cookie(const Cookie& other): cookie{other.cookie} {}
 
 		// Assignment operator.
@@ -76,6 +76,7 @@ namespace fluke {
 	NEW_REQUEST(RandrGetCrtcInfo,               randr_get_crtc_info)
 	NEW_REQUEST(RandrGetOutputPrimary,          randr_get_output_primary)
 	NEW_REQUEST(RandrGetScreenResourcesCurrent, randr_get_screen_resources_current)
+	NEW_REQUEST(GrabPointer,                    grab_pointer)
 
 
 	#undef NEW_REQUEST
@@ -101,6 +102,30 @@ namespace fluke {
 			fluke::get(conn, std::forward<T2>(arg2)),
 			fluke::get(conn, std::forward<Ts>(args))...
 		};
+	}
+
+
+
+	/*
+		This function will call `fluke::get()` on all elements of a tuple and return
+		a new tuple with the returned values.
+
+		example:
+			auto attrs_geoms = fluke::dispatch_consume(conn, [&conn] (xcb_window_t win) {
+				return std::tuple{
+					fluke::get_window_attributes(conn, win),
+					fluke::get_geometry(conn, win)
+				};
+			}, windows);
+
+		// The above example will return a vector of tuples.
+		// `std::vector<std::tuple<fluke::GetWindowAttributesReply, fluke::GetGeometryReply>>`
+	*/
+	template <typename... Ts>
+	inline decltype(auto) get(fluke::Connection& conn, std::tuple<Ts...> tup) {
+		return std::tuple_cat(std::apply([&conn] (auto&&... args) {
+			return std::tuple{fluke::get(conn, std::forward<Ts>(args))...};
+		}, tup));
 	}
 
 
@@ -186,6 +211,31 @@ namespace fluke {
 	) {
 		return xcb_randr_get_screen_resources_current_unchecked(conn, win);
 	}
+
+
+	inline GrabPointerCookie grab_pointer(
+		fluke::Connection& conn,
+		bool owner_events,
+		xcb_window_t grab_window,
+		uint16_t event_mask,
+		uint8_t pointer_mode,
+		uint8_t keyboard_mode,
+		xcb_window_t confine_to,
+		xcb_cursor_t cursor
+	) {
+		return xcb_grab_pointer_unchecked(
+			conn,
+			owner_events,
+			grab_window,
+			event_mask,
+			pointer_mode,
+			keyboard_mode,
+			confine_to,
+			cursor,
+			XCB_CURRENT_TIME
+		);
+	}
+
 
 
 
@@ -278,6 +328,7 @@ namespace fluke {
 	}
 
 
+
 	inline void ungrab_key(fluke::Connection& conn, xcb_keycode_t key, xcb_window_t grab_window, uint16_t modifiers) {
 		xcb_ungrab_key(conn, key, grab_window, modifiers);
 	}
@@ -293,6 +344,11 @@ namespace fluke {
 		xcb_randr_select_input(conn, win, mask);
 	}
 
+
+
+	inline void ungrab_pointer(fluke::Connection& conn) {
+		xcb_ungrab_pointer(conn, XCB_CURRENT_TIME);
+	}
 
 
 
