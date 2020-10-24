@@ -1,3 +1,6 @@
+#ifndef FLUKE_REQUEST_HPP
+#define FLUKE_REQUEST_HPP
+
 #pragma once
 
 #include <type_traits>
@@ -407,3 +410,4 @@ namespace fluke {
 
 }
 
+#endif

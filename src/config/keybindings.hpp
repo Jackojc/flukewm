@@ -1,3 +1,6 @@
+#ifndef FLUKE_KEYBINDINGS_HPP
+#define FLUKE_KEYBINDINGS_HPP
+
 #pragma once
 
 
@@ -90,3 +93,4 @@ namespace fluke::config {
 #undef ACTION
 #undef RUN
 
+#endif

@@ -1,3 +1,6 @@
+#ifndef FLUKE_EVENTS_HPP
+#define FLUKE_EVENTS_HPP
+
 #pragma once
 
 #include <utility>
@@ -88,3 +91,4 @@ namespace fluke {
 	}
 }
 
+#endif

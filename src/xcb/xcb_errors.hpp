@@ -1,3 +1,6 @@
+#ifndef FLUKE_XCB_ERRORS_HPP
+#define FLUKE_XCB_ERRORS_HPP
+
 #pragma once
 
 
@@ -357,3 +360,5 @@ namespace fluke {
 	};
 
 }
+
+#endif

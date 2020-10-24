@@ -1,3 +1,6 @@
+#ifndef FLUKE_KEYS_HPP
+#define FLUKE_KEYS_HPP
+
 #pragma once
 
 #include <array>
@@ -191,3 +194,5 @@ namespace fluke {
 		constexpr uint32_t sleep       = 0x1008FF2F;
 	}
 }
+
+#endif

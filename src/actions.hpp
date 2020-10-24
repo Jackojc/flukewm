@@ -1,3 +1,6 @@
+#ifndef FLUKE_ACTIONS_HPP
+#define FLUKE_ACTIONS_HPP
+
 #pragma once
 
 #include <algorithm>
@@ -602,3 +605,4 @@ namespace fluke {
 	}
 }
 
+#endif
