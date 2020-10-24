@@ -11,10 +11,10 @@ A simple, fast and efficient window manager for X, made with C++ & XCB.
 [![license](https://img.shields.io/github/license/Jackojc/flukewm.svg?style=flat)](./LICENSE)
 [![issues](https://img.shields.io/github/issues/Jackojc/flukewm.svg?style=flat)](https://github.com/Jackojc/flukewm/issues)
 [![discord](https://img.shields.io/discord/537732103765229590.svg?label=discord&style=flat)](https://discord.gg/RmgjcES)
-### What is fluke?
+### What is Fluke?
 Fluke is a simple (but with batteries included) window manager for X, which uses XCB for efficient, asynchronous IO. Fluke is designed to be configured through source (á la dwm).
 
-### Why is fluke?
+### Why is Fluke?
 I wanted a window manager that was lightweight, hackable, well documented, included a decent amount of functionality out of the box (with sane defaults), and was written in a language I was comfortable with.
 
 I never quite found what I was looking for in other window managers for a number of reasons:
@@ -25,7 +25,7 @@ I never quite found what I was looking for in other window managers for a number
 
 - Multi-head support in so-called "minimal" window managers is usually quite poor or non-existent. I use a laptop + dock setup, which means I frequently hotplug monitors.
 
-- The majority of minimal window managers are automatic-tiling; of which I'm not the biggest fan. With fluke, I hope to solve this by making all window-positioning algorithms on-demand - for example, when a keybinding is pressed - such that my layout is not disturbed by the opening/closing of windows.
+- The majority of minimal window managers are automatic-tiling; of which I'm not the biggest fan. With Fluke, I hope to solve this by making all window-positioning algorithms on-demand - for example, when a keybinding is pressed - such that my layout is not disturbed by the opening/closing of windows.
 
 - I wanted to make the best possible use of the asynchronous capabilities of XCB by properly queuing requests and fetching replies. So in essence, blocking for replies is done only when necessary, and in batches.
 
@@ -82,5 +82,5 @@ This project uses the GPLv2 license. (check [LICENSE.md](LICENSE.md))
 	- [2bwm](https://github.com/venam/2bwm)
 	- [sowm](https://github.com/dylanaraps/sowm)
 
-### progress & discussion
+### Progress & discussion
 You can join the discord server in order to follow progress and/or contribute to discussion of the project. (https://discord.gg/RmgjcES)
