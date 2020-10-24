@@ -13,58 +13,63 @@
 
 
 namespace fluke {
+	#define NEW_EVENT_TYPE(name, type) \
+		using name = std::unique_ptr<type, decltype(&std::free)>;
+
 	// event types.
-	using KeyPressEvent = std::unique_ptr<xcb_key_press_event_t, decltype(&std::free)>;
-	using KeyReleaseEvent = std::unique_ptr<xcb_key_release_event_t, decltype(&std::free)>;
-	using KeymapNotifyEvent = std::unique_ptr<xcb_keymap_notify_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(KeyPressEvent, xcb_key_press_event_t)
+	NEW_EVENT_TYPE(KeyReleaseEvent, xcb_key_release_event_t)
+	NEW_EVENT_TYPE(KeymapNotifyEvent, xcb_keymap_notify_event_t)
 
-	using ButtonPressEvent = std::unique_ptr<xcb_button_press_event_t, decltype(&std::free)>;
-	using ButtonReleaseEvent = std::unique_ptr<xcb_button_release_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(ButtonPressEvent, xcb_button_press_event_t)
+	NEW_EVENT_TYPE(ButtonReleaseEvent, xcb_button_release_event_t)
 
-	using MotionNotifyEvent = std::unique_ptr<xcb_motion_notify_event_t, decltype(&std::free)>;
-	using EnterNotifyEvent = std::unique_ptr<xcb_enter_notify_event_t, decltype(&std::free)>;
-	using LeaveNotifyEvent = std::unique_ptr<xcb_leave_notify_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(MotionNotifyEvent, xcb_motion_notify_event_t)
+	NEW_EVENT_TYPE(EnterNotifyEvent, xcb_enter_notify_event_t)
+	NEW_EVENT_TYPE(LeaveNotifyEvent, xcb_leave_notify_event_t)
 
-	using FocusInEvent = std::unique_ptr<xcb_focus_in_event_t, decltype(&std::free)>;
-	using FocusOutEvent = std::unique_ptr<xcb_focus_out_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(FocusInEvent, xcb_focus_in_event_t)
+	NEW_EVENT_TYPE(FocusOutEvent, xcb_focus_out_event_t)
 
-	using ExposeEvent = std::unique_ptr<xcb_expose_event_t, decltype(&std::free)>;
-	using GraphicsExposureEvent = std::unique_ptr<xcb_graphics_exposure_event_t, decltype(&std::free)>;
-	using NoExposureEvent = std::unique_ptr<xcb_no_exposure_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(ExposeEvent, xcb_expose_event_t)
+	NEW_EVENT_TYPE(GraphicsExposureEvent, xcb_graphics_exposure_event_t)
+	NEW_EVENT_TYPE(NoExposureEvent, xcb_no_exposure_event_t)
 
-	using VisibilityNotifyEvent = std::unique_ptr<xcb_visibility_notify_event_t, decltype(&std::free)>;
-	using ReparentNotifyEvent = std::unique_ptr<xcb_reparent_notify_event_t, decltype(&std::free)>;
-	using PropertyNotifyEvent = std::unique_ptr<xcb_property_notify_event_t, decltype(&std::free)>;
-	using ResizeRequestEvent = std::unique_ptr<xcb_resize_request_event_t, decltype(&std::free)>;
-	using GravityNotifyEvent = std::unique_ptr<xcb_gravity_notify_event_t, decltype(&std::free)>;
-	using ColormapNotifyEvent = std::unique_ptr<xcb_colormap_notify_event_t, decltype(&std::free)>;
-	using ClientMessageEvent = std::unique_ptr<xcb_client_message_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(VisibilityNotifyEvent, xcb_visibility_notify_event_t)
+	NEW_EVENT_TYPE(ReparentNotifyEvent, xcb_reparent_notify_event_t)
+	NEW_EVENT_TYPE(PropertyNotifyEvent, xcb_property_notify_event_t)
+	NEW_EVENT_TYPE(ResizeRequestEvent, xcb_resize_request_event_t)
+	NEW_EVENT_TYPE(GravityNotifyEvent, xcb_gravity_notify_event_t)
+	NEW_EVENT_TYPE(ColormapNotifyEvent, xcb_colormap_notify_event_t)
+	NEW_EVENT_TYPE(ClientMessageEvent, xcb_client_message_event_t)
 
-	using CreateNotifyEvent = std::unique_ptr<xcb_create_notify_event_t, decltype(&std::free)>;
-	using DestroyNotifyEvent = std::unique_ptr<xcb_destroy_notify_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(CreateNotifyEvent, xcb_create_notify_event_t)
+	NEW_EVENT_TYPE(DestroyNotifyEvent, xcb_destroy_notify_event_t)
 
-	using UnmapNotifyEvent = std::unique_ptr<xcb_unmap_notify_event_t, decltype(&std::free)>;
-	using MapNotifyEvent = std::unique_ptr<xcb_map_notify_event_t, decltype(&std::free)>;
-	using MapRequestEvent = std::unique_ptr<xcb_map_request_event_t, decltype(&std::free)>;
-	using MappingNotifyEvent = std::unique_ptr<xcb_mapping_notify_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(UnmapNotifyEvent, xcb_unmap_notify_event_t)
+	NEW_EVENT_TYPE(MapNotifyEvent, xcb_map_notify_event_t)
+	NEW_EVENT_TYPE(MapRequestEvent, xcb_map_request_event_t)
+	NEW_EVENT_TYPE(MappingNotifyEvent, xcb_mapping_notify_event_t)
 
-	using ConfigureNotifyEvent = std::unique_ptr<xcb_configure_notify_event_t, decltype(&std::free)>;
-	using ConfigureRequestEvent = std::unique_ptr<xcb_configure_request_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(ConfigureNotifyEvent, xcb_configure_notify_event_t)
+	NEW_EVENT_TYPE(ConfigureRequestEvent, xcb_configure_request_event_t)
 
-	using CirculateRequestEvent = std::unique_ptr<xcb_circulate_request_event_t, decltype(&std::free)>;
-	using CirculateNotifyEvent = std::unique_ptr<xcb_circulate_notify_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(CirculateRequestEvent, xcb_circulate_request_event_t)
+	NEW_EVENT_TYPE(CirculateNotifyEvent, xcb_circulate_notify_event_t)
 
-	using SelectionClearEvent = std::unique_ptr<xcb_selection_clear_event_t, decltype(&std::free)>;
-	using SelectionRequestEvent = std::unique_ptr<xcb_selection_request_event_t, decltype(&std::free)>;
-	using SelectionNotifyEvent = std::unique_ptr<xcb_selection_notify_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(SelectionClearEvent, xcb_selection_clear_event_t)
+	NEW_EVENT_TYPE(SelectionRequestEvent, xcb_selection_request_event_t)
+	NEW_EVENT_TYPE(SelectionNotifyEvent, xcb_selection_notify_event_t)
 
-	using RandrScreenChangeNotifyEvent = std::unique_ptr<xcb_randr_screen_change_notify_event_t, decltype(&std::free)>;
-	using RandrNotifyEvent = std::unique_ptr<xcb_randr_notify_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(RandrScreenChangeNotifyEvent, xcb_randr_screen_change_notify_event_t)
+	NEW_EVENT_TYPE(RandrNotifyEvent, xcb_randr_notify_event_t)
 
-	using GeEvent = std::unique_ptr<xcb_ge_generic_event_t, decltype(&std::free)>;
-	using Event = std::unique_ptr<xcb_generic_event_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(GeEvent, xcb_ge_generic_event_t)
+	NEW_EVENT_TYPE(Event, xcb_generic_event_t)
 
-	using Error = std::unique_ptr<xcb_generic_error_t, decltype(&std::free)>;
+	NEW_EVENT_TYPE(Error, xcb_generic_error_t)
+
+	#undef NEW_EVENT_TYPE
 }
 
 

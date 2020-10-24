@@ -36,7 +36,7 @@ namespace fluke {
 		}
 
 		// Implicit cast operator.
-		operator cookie_t() const noexcept {
+		inline operator cookie_t() const noexcept {
 			return cookie;
 		}
 	};
@@ -137,29 +137,29 @@ namespace fluke {
 
 
 	// Getter functions
-	inline InternAtomCookie intern_atom(fluke::Connection& conn, bool only_if_exists, std::string_view name) {
+	inline InternAtomCookie intern_atom(fluke::Connection& conn, const bool only_if_exists, const std::string_view name) {
 		return xcb_intern_atom_unchecked(conn, only_if_exists, name.size(), name.data());
 	}
 
 
-	inline GetWindowAttributesCookie get_window_attributes(fluke::Connection& conn, xcb_window_t win) {
+	inline GetWindowAttributesCookie get_window_attributes(fluke::Connection& conn, const xcb_window_t win) {
 		return xcb_get_window_attributes_unchecked(conn, win);
 	}
 
 
-	inline GetGeometryCookie get_geometry(fluke::Connection& conn, xcb_drawable_t draw) {
+	inline GetGeometryCookie get_geometry(fluke::Connection& conn, const xcb_drawable_t draw) {
 		return xcb_get_geometry_unchecked(conn, draw);
 	}
 
 
 	inline GetPropertyCookie get_property(
 		fluke::Connection& conn,
-		bool delete_,
-		xcb_window_t win,
-		xcb_atom_t property,
-		xcb_atom_t type,
-		uint32_t long_offset,
-		uint32_t long_length
+		const bool delete_,
+		const xcb_window_t win,
+		const xcb_atom_t property,
+		const xcb_atom_t type,
+		const uint32_t long_offset,
+		const uint32_t long_length
 	) {
 		return xcb_get_property_unchecked(conn, delete_, win, property, type, long_offset, long_length);
 	}
@@ -170,12 +170,12 @@ namespace fluke {
 	}
 
 
-	inline QueryTreeCookie query_tree(fluke::Connection& conn, xcb_window_t win) {
+	inline QueryTreeCookie query_tree(fluke::Connection& conn, const xcb_window_t win) {
 		return xcb_query_tree_unchecked(conn, win);
 	}
 
 
-	inline QueryPointerCookie query_pointer(fluke::Connection& conn, xcb_window_t win) {
+	inline QueryPointerCookie query_pointer(fluke::Connection& conn, const xcb_window_t win) {
 		return xcb_query_pointer_unchecked(conn, win);
 	}
 
@@ -184,33 +184,33 @@ namespace fluke {
 
 
 
-	inline RandrGetProvidersCookie randr_get_providers(fluke::Connection& conn, xcb_window_t win) {
+	inline RandrGetProvidersCookie randr_get_providers(fluke::Connection& conn, const xcb_window_t win) {
 		return xcb_randr_get_providers_unchecked(conn, win);
 	}
 
 
-	inline RandrGetProviderInfoCookie randr_get_provider_info(fluke::Connection& conn, xcb_randr_provider_t provider) {
+	inline RandrGetProviderInfoCookie randr_get_provider_info(fluke::Connection& conn, const xcb_randr_provider_t provider) {
 		return xcb_randr_get_provider_info_unchecked(conn, provider, XCB_CURRENT_TIME);
 	}
 
 
-	inline RandrGetOutputInfoCookie randr_get_output_info(fluke::Connection& conn, xcb_randr_output_t provider) {
+	inline RandrGetOutputInfoCookie randr_get_output_info(fluke::Connection& conn, const xcb_randr_output_t provider) {
 		return xcb_randr_get_output_info_unchecked(conn, provider, XCB_CURRENT_TIME);
 	}
 
 
-	inline RandrGetCrtcInfoCookie randr_get_crtc_info(fluke::Connection& conn, xcb_randr_crtc_t crtc) {
+	inline RandrGetCrtcInfoCookie randr_get_crtc_info(fluke::Connection& conn, const xcb_randr_crtc_t crtc) {
 		return xcb_randr_get_crtc_info_unchecked(conn, crtc, XCB_CURRENT_TIME);
 	}
 
 
-	inline RandrGetOutputPrimaryCookie randr_get_output_primary(fluke::Connection& conn, xcb_window_t win) {
+	inline RandrGetOutputPrimaryCookie randr_get_output_primary(fluke::Connection& conn, const xcb_window_t win) {
 		return xcb_randr_get_output_primary_unchecked(conn, win);
 	}
 
 
 	inline RandrGetScreenResourcesCurrentCookie randr_get_screen_resources_current(
-		fluke::Connection& conn, xcb_window_t win
+		fluke::Connection& conn, const xcb_window_t win
 	) {
 		return xcb_randr_get_screen_resources_current_unchecked(conn, win);
 	}
@@ -218,13 +218,13 @@ namespace fluke {
 
 	inline GrabPointerCookie grab_pointer(
 		fluke::Connection& conn,
-		bool owner_events,
-		xcb_window_t grab_window,
-		uint16_t event_mask,
-		uint8_t pointer_mode,
-		uint8_t keyboard_mode,
-		xcb_window_t confine_to,
-		xcb_cursor_t cursor
+		const bool owner_events,
+		const xcb_window_t grab_window,
+		const uint16_t event_mask,
+		const uint8_t pointer_mode,
+		const uint8_t keyboard_mode,
+		const xcb_window_t confine_to,
+		const xcb_cursor_t cursor
 	) {
 		return xcb_grab_pointer_unchecked(
 			conn,
@@ -249,7 +249,7 @@ namespace fluke {
 	// Setter functions
 	template <typename T, typename... Ts>
 	inline void configure_window(
-		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args
+		fluke::Connection& conn, const xcb_window_t win, const uint16_t value_mask, T&& arg, Ts&&... args
 	) {
 		const uint32_t values[] = {
 			static_cast<uint32_t>(std::forward<T>(arg)),
@@ -259,7 +259,7 @@ namespace fluke {
 	}
 
 	inline void configure_window(
-		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args
+		fluke::Connection& conn, const xcb_window_t win, const uint16_t value_mask, uint32_t* const args
 	) {
 		xcb_configure_window(conn, win, value_mask, args);
 	}
@@ -270,7 +270,7 @@ namespace fluke {
 
 	template <typename T, typename... Ts>
 	inline void change_window_attributes(
-		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, T&& arg, Ts&&... args
+		fluke::Connection& conn, const xcb_window_t win, const uint16_t value_mask, T&& arg, Ts&&... args
 	) {
 		const uint32_t values[] = {
 			static_cast<uint32_t>(std::forward<T>(arg)),
@@ -280,7 +280,7 @@ namespace fluke {
 	}
 
 	inline void change_window_attributes(
-		fluke::Connection& conn, xcb_window_t win, uint16_t value_mask, uint32_t* args
+		fluke::Connection& conn, const xcb_window_t win, const uint16_t value_mask, uint32_t* const args
 	) {
 		xcb_change_window_attributes(conn, win, value_mask, args);
 	}
@@ -290,17 +290,17 @@ namespace fluke {
 
 
 
-	inline void set_input_focus(fluke::Connection& conn, uint8_t revert_to, xcb_window_t focus) {
+	inline void set_input_focus(fluke::Connection& conn, const uint8_t revert_to, const xcb_window_t focus) {
 		xcb_set_input_focus(conn, revert_to, focus, XCB_CURRENT_TIME);
 	}
 
 
-	inline void map_window(fluke::Connection& conn, xcb_window_t win) {
+	inline void map_window(fluke::Connection& conn, const xcb_window_t win) {
 		xcb_map_window(conn, win);
 	}
 
 
-	inline void unmap_window(fluke::Connection& conn, xcb_window_t win) {
+	inline void unmap_window(fluke::Connection& conn, const xcb_window_t win) {
 		xcb_unmap_window(conn, win);
 	}
 
@@ -308,10 +308,10 @@ namespace fluke {
 
 	inline void warp_pointer(
 		fluke::Connection& conn,
-		xcb_window_t src, xcb_window_t dest,
-		int16_t src_x, int16_t src_y,
-		uint16_t src_width, uint16_t src_height,
-		int16_t dest_x, int16_t dest_y
+		const xcb_window_t src, const xcb_window_t dest,
+		const int16_t src_x, const int16_t src_y,
+		const uint16_t src_width, const uint16_t src_height,
+		const int16_t dest_x, const int16_t dest_y
 	) {
 		xcb_warp_pointer(conn, src, dest, src_x, src_y, src_width, src_height, dest_x, dest_y);
 	}
@@ -320,30 +320,30 @@ namespace fluke {
 
 	inline void grab_key(
 		fluke::Connection& conn,
-		bool owner_events,
-		xcb_window_t grab_window,
-		uint16_t modifiers,
-		xcb_keycode_t key,
-		uint8_t pointer_mode,
-		uint8_t keyboard_mode
+		const bool owner_events,
+		const xcb_window_t grab_window,
+		const uint16_t modifiers,
+		const xcb_keycode_t key,
+		const uint8_t pointer_mode,
+		const uint8_t keyboard_mode
 	) {
 		xcb_grab_key(conn, owner_events, grab_window, modifiers, key, pointer_mode, keyboard_mode);
 	}
 
 
 
-	inline void ungrab_key(fluke::Connection& conn, xcb_keycode_t key, xcb_window_t grab_window, uint16_t modifiers) {
+	inline void ungrab_key(fluke::Connection& conn, const xcb_keycode_t key, const xcb_window_t grab_window, const uint16_t modifiers) {
 		xcb_ungrab_key(conn, key, grab_window, modifiers);
 	}
 
 
 	template <typename T>
-	inline void send_event(fluke::Connection& conn, bool propagate, xcb_window_t win, uint32_t event_mask, T event) {
+	inline void send_event(fluke::Connection& conn, const bool propagate, const xcb_window_t win, const uint32_t event_mask, const T event) {
 		xcb_send_event(conn, propagate, win, event_mask, reinterpret_cast<const char*>(event));
 	}
 
 
-	inline void randr_select_input(fluke::Connection& conn, xcb_window_t win, uint16_t mask) {
+	inline void randr_select_input(fluke::Connection& conn, const xcb_window_t win, const uint16_t mask) {
 		xcb_randr_select_input(conn, win, mask);
 	}
 
