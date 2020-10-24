@@ -1,3 +1,6 @@
+#ifndef FLUKE_OPTIONS_HPP
+#define FLUKE_OPTIONS_HPP
+
 #pragma once
 
 
@@ -28,4 +31,4 @@ namespace fluke::config {
 	constexpr auto GAP = 1;
 }
 
-
+#endif

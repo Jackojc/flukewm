@@ -1,3 +1,6 @@
+#ifndef FLUKE_EXEC_HPP
+#define FLUKE_EXEC_HPP
+
 #pragma once
 
 extern "C" {
@@ -29,3 +32,5 @@ namespace fluke {
 		return execlp(arg, arg, args..., (char*)nullptr) != -1;
 	}
 }
+
+#endif

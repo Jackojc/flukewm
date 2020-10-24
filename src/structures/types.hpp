@@ -1,3 +1,6 @@
+#ifndef FLUKE_TYPES_HPP
+#define FLUKE_TYPE_HPP
+
 #pragma once
 
 #include <iostream>
@@ -95,3 +98,4 @@ namespace fluke {
 	}
 }
 
+#endif

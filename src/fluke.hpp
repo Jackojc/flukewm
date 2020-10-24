@@ -1,3 +1,6 @@
+#ifndef FLUKE_HPP
+#define FLUKE_HPP
+
 #pragma once
 
 #include <string>
@@ -67,3 +70,5 @@ namespace fluke {
 #include <config/hooks.hpp>
 
 #include <events/event_handlers.hpp>
+
+#endif

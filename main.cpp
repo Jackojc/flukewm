@@ -11,21 +11,21 @@ int status = EXIT_SUCCESS;  // Exit status for signal handler.
 
 
 // Keyboard interrupt.
-void sigint(int) {
+inline void sigint(int) {
 	FLUKE_DEBUG_WARN("SIGINT")
 	std::longjmp(exit_jump, EXIT_FAILURE);
 }
 
 
 // Terminate.
-void sigterm(int) {
+inline void sigterm(int) {
 	FLUKE_DEBUG_WARN("SIGTERM")
 	std::longjmp(exit_jump, EXIT_FAILURE);
 }
 
 
 // Kill.
-[[noreturn]] void sigkill(int) {
+[[noreturn]] inline void sigkill(int) {
 	FLUKE_DEBUG_ERROR("SIGKILL")
 	std::exit(EXIT_FAILURE);
 }
@@ -65,7 +65,7 @@ int main() {
 
 	// For every mapped window, tell it what events we wish to receive from it
 	// and also set the border colour and width of the window.
-	for (xcb_window_t win: fluke::get_mapped_windows(conn)) {
+	for (const xcb_window_t win: fluke::get_mapped_windows(conn)) {
 		fluke::change_window_attributes(conn, win, XCB_CW_EVENT_MASK, fluke::XCB_WINDOW_EVENTS);
 		fluke::configure_window(conn, win, XCB_CONFIG_WINDOW_BORDER_WIDTH, fluke::config::BORDER_SIZE);
 		fluke::change_window_attributes(conn, win, XCB_CW_BORDER_PIXEL, fluke::config::BORDER_COLOUR_INACTIVE);
@@ -74,7 +74,7 @@ int main() {
 
 	// Get the window which currently has keyboard focus
 	// (if no window is focused an error will be generated but we just ignore it)
-	xcb_window_t focused = fluke::get_focused_window(conn);
+	const xcb_window_t focused = fluke::get_focused_window(conn);
 
 	if (fluke::is_valid_window(conn, focused)) {
 		// Set the stacking mode, border width and border colour for the focused window.

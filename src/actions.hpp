@@ -1,3 +1,6 @@
+#ifndef FLUKE_ACTIONS_HPP
+#define FLUKE_ACTIONS_HPP
+
 #pragma once
 
 #include <algorithm>
@@ -278,11 +281,9 @@ namespace fluke {
 		fluke::center_window_on_hovered_display(conn, focused);
 	}
 
-
-
 	inline void action_center_resize(fluke::Connection& conn) {
 		FLUKE_DEBUG_NOTICE("action '", tinge::fg::make_yellow("CENTER_RESIZE"), "'")
-
+      
 		// Get the focused window and its geometry.
 		const xcb_window_t focused = fluke::get_focused_window(conn);
 
@@ -602,3 +603,4 @@ namespace fluke {
 	}
 }
 
+#endif

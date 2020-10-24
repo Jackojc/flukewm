@@ -1,3 +1,6 @@
+#ifndef FLUKE_XCB_HPP
+#define FLUKE_XCB_HPP
+
 #pragma once
 
 #include <iomanip>
@@ -57,3 +60,4 @@ namespace fluke {
 	;
 }
 
+#endif

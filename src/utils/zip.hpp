@@ -1,3 +1,6 @@
+#ifndef FLUKE_ZIP_HPP
+#define FLUKE_ZIP_HPP
+
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
@@ -144,3 +147,5 @@ namespace fluke {
 		return zipper<T, Ts...>{std::forward<T>(first), std::forward<Ts>(args)...};
 	}
 }
+
+#endif

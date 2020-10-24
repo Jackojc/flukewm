@@ -1,3 +1,6 @@
+#ifndef FLUKE_CONNECTION_HPP
+#define FLUKE_CONNECTION_HPP
+
 #pragma once
 
 #include <memory>
@@ -77,3 +80,5 @@ namespace fluke {
 			}
 	};
 }
+
+#endif

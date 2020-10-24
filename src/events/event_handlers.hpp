@@ -1,3 +1,6 @@
+#ifndef FLUKE_EVENT_HANDLERS_HPP
+#define FLUKE_EVENT_HANDLERS_HPP
+
 #pragma once
 
 #include <algorithm>
@@ -418,3 +421,4 @@ namespace fluke {
 	}
 }
 
+#endif

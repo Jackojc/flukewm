@@ -1,3 +1,6 @@
+#ifndef FLUKE_HOOKS_HPP
+#define FLUKE_HOOKS_HPP
+
 #pragma once
 
 
@@ -66,3 +69,4 @@ namespace fluke {
 	inline void on_randr_notify(fluke::Connection&, const fluke::RandrNotifyEvent&) {}
 }
 
+#endif
